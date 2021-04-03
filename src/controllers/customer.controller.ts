@@ -15,6 +15,7 @@ import { CustomerService } from '../services/customer.service';
 import { PaymentService } from '../services/payments.service';
 import { v4 as uuidv4 } from 'uuid';
 import { CourseService } from '../services/courses.service';
+import { dateUtils } from '../utils/dateUtils';
 
 @Controller('/customer')
 export class CustomerController {
@@ -22,6 +23,7 @@ export class CustomerController {
     private readonly customerService: CustomerService,
     private readonly paymentService: PaymentService,
     private readonly courseService: CourseService,
+    private readonly dateUtils: dateUtils,
   ) {}
 
   @Post()
@@ -36,7 +38,7 @@ export class CustomerController {
       const course = await this.courseService.listCourseById(
         String(newCustomer.course),
       );
-      const dueDate = await this.paymentService.getDueDate(
+      const dueDate = await this.dateUtils.getDueDate(
         course.startAt,
         course.endAt,
       );

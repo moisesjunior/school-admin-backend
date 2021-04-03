@@ -141,19 +141,4 @@ export class PaymentService {
       return error;
     }
   }
-
-  async getDueDate(startAt: Date, endAt: Date) {
-    if (new Date() > startAt && new Date() < endAt) {
-      const month = new Date().getMonth() + 1;
-      const year = new Date().getFullYear();
-
-      return new Date(year, month, 5);
-    } else if (new Date() < startAt && new Date() < endAt) {
-      const month = startAt.getMonth();
-      const year = startAt.getFullYear();
-
-      console.log(month, year);
-      return new Date(year, month, 5);
-    }
-  }
 }
