@@ -92,11 +92,20 @@ export class PaymentController {
     id: string,
   ) {
     try {
+      const paymentFound = await this.paymentService.listPaymentById(id);
+
+      if (paymentFound === undefined) {
+        throw Error('Não foi possível encontrar o pagamento!');
+      }
+
       const payment = await this.paymentService.deletePaymentById(id);
 
       return response.status(HttpStatus.OK).json(payment);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        message: 'Atenção!',
+        title: error.message,
+      });
     }
   }
 }

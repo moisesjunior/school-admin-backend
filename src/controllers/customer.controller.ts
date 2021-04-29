@@ -112,11 +112,20 @@ export class CustomerController {
     id: string,
   ) {
     try {
+      const customerFound = await this.customerService.listCustomerById(id);
+
+      if (customerFound === undefined) {
+        throw Error('Não foi possível encontrar um cliente!');
+      }
+
       const customer = await this.customerService.deleteCustomerById(id);
 
       return response.status(HttpStatus.OK).json(customer);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        message: 'Atenção!',
+        title: error.message,
+      });
     }
   }
 }
