@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, HttpModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Connection } from 'typeorm';
+import { ConfigModule } from '@nestjs/config';
 
 import { Course } from './infra/entities/course.entity';
 import { Payment } from './infra/entities/payments.entity';
@@ -15,12 +16,20 @@ import { PaymentService } from './services/payments.service';
 import { CourseService } from './services/courses.service';
 import { CustomerService } from './services/customer.service';
 
-import { ConfigModule } from '@nestjs/config';
 import 'reflect-metadata';
+import { DateUtils } from './utils/dateUtils';
+import { ExpenditureController } from './controllers/expenditure.controller';
+import { ExpenditureService } from './services/expenditure.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
+    HttpModule.registerAsync({
+      useFactory: () => ({
+        timeout: 5000,
+        maxRedirects: 5,
+      }),
+    }),
     TypeOrmModule.forRoot({
       type: process.env.TYPEORM_CONNECTION as any,
       host: process.env.TYPEORM_HOST,
@@ -36,8 +45,19 @@ import 'reflect-metadata';
     }),
     TypeOrmModule.forFeature([Course, Payment, Customer, Expenditure]),
   ],
-  controllers: [CourseController, CustomerController, PaymentController],
-  providers: [CourseService, CustomerService, PaymentService],
+  controllers: [
+    CourseController,
+    CustomerController,
+    PaymentController,
+    ExpenditureController,
+  ],
+  providers: [
+    CourseService,
+    CustomerService,
+    PaymentService,
+    ExpenditureService,
+    DateUtils,
+  ],
 })
 export class AppModule {
   constructor(private connection: Connection) {}
