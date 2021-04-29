@@ -28,7 +28,7 @@ export class Expenditure {
   @Column('numeric')
   @IsNumber()
   @IsNotEmpty()
-  value: Date;
+  value: number;
 
   @Column('varchar')
   @IsString()
@@ -45,7 +45,10 @@ export class Expenditure {
   @IsNotEmpty()
   referenceDate: Date;
 
-  @Column('timestamp')
+  @Column({
+    type: 'timestamp',
+    nullable: true,
+  })
   @IsDateString()
   @IsOptional()
   paymentDay: Date;

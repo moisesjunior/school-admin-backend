@@ -9,7 +9,6 @@ import {
 } from 'typeorm';
 import { Customer } from './customer.entity';
 import {
-  IsDateString,
   IsNotEmpty,
   IsNumber,
   IsObject,
@@ -27,11 +26,27 @@ interface Discount {
 interface FineAndInterest {
   value: number;
 }
+type PaymentsType =
+  | 'Mensalidade'
+  | 'Dependência'
+  | 'Matrícula'
+  | 'Falta (Estágio)'
+  | 'Outros';
 
 @Entity()
 export class Payment {
   @PrimaryColumn('varchar')
   id: string = uuidv4();
+
+  @Column('varchar')
+  @IsString()
+  @IsNotEmpty()
+  type: PaymentsType;
+
+  @Column('varchar')
+  @IsString()
+  @IsNotEmpty()
+  status: string;
 
   @Column('varchar')
   @IsString()
@@ -74,17 +89,23 @@ export class Payment {
   @IsOptional()
   installmentValue?: number;
 
-  @Column('json')
+  @Column('json', {
+    nullable: true,
+  })
   @IsObject()
   @IsNotEmpty()
   discount: Discount;
 
-  @Column('json')
+  @Column('json', {
+    nullable: true,
+  })
   @IsObject()
   @IsNotEmpty()
   interest: FineAndInterest;
 
-  @Column('json')
+  @Column('json', {
+    nullable: true,
+  })
   @IsObject()
   @IsNotEmpty()
   fine: FineAndInterest;
@@ -98,6 +119,9 @@ export class Payment {
   @DeleteDateColumn()
   deletedAt?: Date;
 
-  @ManyToOne(() => Customer, (customer) => customer.payments)
+  @ManyToOne(() => Customer, (customer) => customer.payments, {
+    eager: true,
+    nullable: true,
+  })
   customer: Customer;
 }

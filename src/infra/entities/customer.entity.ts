@@ -7,7 +7,6 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
-  Unique,
 } from 'typeorm';
 import {
   IsBoolean,
@@ -15,15 +14,12 @@ import {
   IsEmail,
   IsNotEmpty,
   IsNumber,
-  IsObject,
   IsOptional,
-  IsPhoneNumber,
   IsString,
 } from 'class-validator';
 import { Course } from './course.entity';
 import { Payment } from './payments.entity';
 
-@Unique(['cpf', 'rg', 'email'])
 @Entity()
 export class Customer {
   @PrimaryColumn('varchar')
@@ -39,34 +35,51 @@ export class Customer {
   @IsNotEmpty()
   cpf: string;
 
-  @Column('varchar')
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
   @IsEmail()
-  @IsNotEmpty()
+  @IsOptional()
   email: string;
 
-  @Column('varchar')
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   phoneNumber: string;
 
-  @Column('varchar')
+  @Column({
+    type: 'varchar',
+  })
   @IsString()
   @IsNotEmpty()
   mobilePhone: string;
 
-  @Column('timestamp')
+  @Column({
+    type: 'timestamp',
+    nullable: true,
+  })
   @IsDateString()
-  @IsNotEmpty()
+  @IsOptional()
   birthdate: Date;
 
-  @Column('varchar')
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   nationality: string;
 
-  @Column('varchar')
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   maritalStatus: string;
 
   @Column('varchar')
@@ -79,7 +92,10 @@ export class Customer {
   @IsNotEmpty()
   addressNumber: number;
 
-  @Column('varchar')
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
   @IsString()
   @IsOptional()
   complement: string;
@@ -104,77 +120,120 @@ export class Customer {
   @IsNotEmpty()
   postalCode: string;
 
-  @Column('varchar')
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   rg: string;
 
-  @Column('varchar')
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   emitter: string;
 
-  @Column('timestamp')
+  @Column({
+    type: 'timestamp',
+    nullable: true,
+  })
   @IsDateString()
-  @IsNotEmpty()
+  @IsOptional()
   emissionDate: Date;
 
-  @Column('varchar')
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
   @IsString()
   @IsOptional()
   voterRegistration: string;
 
-  @Column('boolean')
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
   @IsBoolean()
   @IsOptional()
   reservist: boolean;
 
-  @Column('varchar')
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   fatherName: string;
 
-  @Column('varchar')
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   motherName: string;
 
-  @Column('boolean')
+  @Column({
+    type: 'boolean',
+    nullable: true,
+  })
   @IsBoolean()
-  @IsNotEmpty()
+  @IsOptional()
   highSchool: boolean;
 
-  @Column('varchar')
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   whichSchool: string;
 
-  @Column('varchar')
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   whichYear: string;
 
-  @Column('varchar')
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   whichCity: string;
 
-  @Column('boolean')
+  @Column({
+    type: 'boolean',
+    nullable: true,
+  })
   @IsBoolean()
-  @IsNotEmpty()
+  @IsOptional()
   chronicDisease: boolean;
 
-  @Column('boolean')
+  @Column({
+    type: 'boolean',
+    nullable: true,
+  })
   @IsBoolean()
-  @IsNotEmpty()
+  @IsOptional()
   hepatitis: boolean;
 
-  @Column('boolean')
+  @Column({
+    type: 'boolean',
+    nullable: true,
+  })
   @IsBoolean()
-  @IsNotEmpty()
+  @IsOptional()
   useMedication: boolean;
 
-  @Column('varchar', {
+  @Column({
+    type: 'varchar',
     nullable: true,
   })
   @IsString()
@@ -192,6 +251,7 @@ export class Customer {
 
   @ManyToOne(() => Course, (course) => course.customers, {
     eager: true,
+    nullable: true,
   })
   course: Course;
 
