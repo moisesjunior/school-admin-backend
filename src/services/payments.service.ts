@@ -2,6 +2,7 @@ import { HttpService, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Connection, Repository } from 'typeorm';
 import { Payment } from '../infra/entities/payments.entity';
+import { v4 as uuid } from 'uuid';
 
 @Injectable()
 export class PaymentService {
@@ -34,15 +35,21 @@ export class PaymentService {
     };
 
     try {
-      const asaasCustomer = await this.httpService
-        .post(`${process.env.ASAAS_URL}/api/v3/payments`, newAsaasPayment, {
-          headers: {
-            'Content-Type': 'application/json',
-            access_token: process.env.ASAAS_API_KEY,
-          },
-        })
-        .toPromise();
-      payment.id = asaasCustomer.data.id;
+      if (payment.generateAssasPayment) {
+        const asaasCustomer = await this.httpService
+          .post(`${process.env.ASAAS_URL}/api/v3/payments`, newAsaasPayment, {
+            headers: {
+              'Content-Type': 'application/json',
+              access_token: process.env.ASAAS_API_KEY,
+            },
+          })
+          .toPromise();
+        payment.id = asaasCustomer.data.id;
+        payment.status = asaasCustomer.data.id;
+      } else {
+        payment.id = uuid();
+        payment.status = 'HISTÓRICO';
+      }
 
       const newPayment = await queryRunner.manager.save(Payment, payment);
       await queryRunner.commitTransaction();

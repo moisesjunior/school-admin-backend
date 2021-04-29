@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Customer } from './customer.entity';
 import {
+  IsBoolean,
   IsNotEmpty,
   IsNumber,
   IsObject,
@@ -38,12 +39,19 @@ export class Payment {
   @PrimaryColumn('varchar')
   id: string = uuidv4();
 
+  @Column('boolean')
+  @IsBoolean()
+  @IsNotEmpty()
+  generateAssasPayment: boolean;
+
   @Column('varchar')
   @IsString()
   @IsNotEmpty()
   type: PaymentsType;
 
-  @Column('varchar')
+  @Column('varchar', {
+    nullable: true,
+  })
   @IsString()
   @IsNotEmpty()
   status: string;
