@@ -19,14 +19,16 @@ export class PaymentService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    if (payment.type === 'Mensalidade') {
+    if (
+      ['Mensalidade', 'Dependência', 'Falta (Estágio)'].includes(payment.type)
+    ) {
       payment.discount = {
         value: 20,
         dueDateLimitDays: 5,
         type: 'FIXED',
       };
       payment.interest = {
-        value: 0.13,
+        value: 1,
       };
       payment.fine = {
         value: 10,
