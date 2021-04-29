@@ -34,6 +34,14 @@ export class CustomerController {
     customer: Customer,
   ) {
     try {
+      const findCustomer = await this.customerService.listCustomers({
+        cpf: customer.cpf,
+      });
+
+      if (findCustomer.length > 0) {
+        throw Error('Esse cpf de cliente já existe');
+      }
+
       const newCustomer = await this.customerService.createCustomer(customer);
 
       return response.status(HttpStatus.CREATED).send(newCustomer);
@@ -72,7 +80,7 @@ export class CustomerController {
     course?: string,
   ) {
     try {
-      const customers = await this.customerService.listCustomers(course);
+      const customers = await this.customerService.listCustomers({ course });
 
       return response.status(HttpStatus.OK).json(customers);
     } catch (error) {

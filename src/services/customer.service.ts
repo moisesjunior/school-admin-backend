@@ -3,6 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Connection, Repository } from 'typeorm';
 import { Customer } from '../infra/entities/customer.entity';
 
+interface findCustomer {
+  course?: string;
+  cpf?: string;
+}
+
 @Injectable()
 export class CustomerService {
   constructor(
@@ -40,6 +45,7 @@ export class CustomerService {
           },
         })
         .toPromise();
+
       customer.id = asaasCustomer.data.id;
 
       await queryRunner.manager.save(Customer, customer);
@@ -160,11 +166,12 @@ export class CustomerService {
     }
   }
 
-  async listCustomers(course?: string) {
+  async listCustomers({ course, cpf }: findCustomer) {
     try {
       const customers = await this.customerRepository.find({
         where: {
           ...(course !== undefined ? { course: course } : {}),
+          ...(cpf !== undefined ? { cpf: cpf } : {}),
         },
       });
 
