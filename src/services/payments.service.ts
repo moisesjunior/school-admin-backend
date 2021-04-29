@@ -19,6 +19,32 @@ export class PaymentService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    if (payment.type === 'Mensalidade') {
+      payment.discount = {
+        value: 20,
+        dueDateLimitDays: 5,
+        type: 'FIXED',
+      };
+      payment.interest = {
+        value: 0.13,
+      };
+      payment.fine = {
+        value: 10,
+      };
+    } else {
+      payment.discount = {
+        value: 0,
+        dueDateLimitDays: 0,
+        type: 'FIXED',
+      };
+      payment.interest = {
+        value: 0,
+      };
+      payment.fine = {
+        value: 0,
+      };
+    }
+
     const newAsaasPayment = {
       customer: payment.customer,
       billingType: payment.billingType,
