@@ -87,8 +87,8 @@ export class ExpenditureController {
     }
   }
 
-  @Delete()
-  async deleteCourse(
+  @Delete('/:id')
+  async deleteExpenditure(
     @Res()
     response: Response,
     @Param('id')
