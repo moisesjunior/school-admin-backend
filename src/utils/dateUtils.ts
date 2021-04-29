@@ -1,33 +1,47 @@
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class dateUtils {
+export class DateUtils {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   constructor() {}
 
   async getDueDate(startAt: Date, endAt: Date) {
-    if (new Date() > startAt && new Date() < endAt) {
-      const month = new Date().getMonth() + 1;
-      const year = new Date().getFullYear();
+    if (new Date() < endAt) {
+      const addMonth =
+        new Date() > startAt && new Date() < endAt
+          ? new Date().getDay() > 10
+            ? 1
+            : 0
+          : startAt.getDay() > 10
+          ? 1
+          : 0;
 
-      const dueDate = new Date(year, month, 5);
-      const dayOfWeek = dueDate.getDay();
+      const month =
+        (new Date() > startAt ? new Date().getMonth() : startAt.getMonth()) +
+        addMonth;
 
-      switch (dayOfWeek) {
-        case 0:
-          return new Date(year, month, 5 + 1);
-        case 6:
-          return new Date(year, month, 5 + 2);
-      }
-    } else if (new Date() < startAt && new Date() < endAt) {
-      const month = startAt.getMonth();
-      const year = startAt.getFullYear();
+      const year =
+        new Date() > startAt ? new Date().getFullYear() : startAt.getFullYear();
 
-      return new Date(year, month, 5);
+      return this.checkWorkDay(new Date(year, month, 10));
     }
   }
 
-  async verifyHoliday() {
-    const holidays = {};
+  async checkWorkDay(date: Date) {
+    let newDate: Date;
+    const dayOfWeek = date.getDay();
+    const year = date.getFullYear();
+    const month = date.getMonth();
+
+    switch (dayOfWeek) {
+      case 0:
+        newDate = new Date(year, month, 10 + 1);
+      case 6:
+        newDate = new Date(year, month, 10 + 2);
+      default:
+        newDate = date;
+    }
+
+    return newDate;
   }
 }
