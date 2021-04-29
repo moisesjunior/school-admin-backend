@@ -8,14 +8,14 @@ import {
   Res,
   HttpStatus,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { Customer } from '../infra/entities/customer.entity';
 import { CustomerService } from '../services/customer.service';
 import { PaymentService } from '../services/payments.service';
-import { v4 as uuidv4 } from 'uuid';
 import { CourseService } from '../services/courses.service';
-import { dateUtils } from '../utils/dateUtils';
+import { DateUtils } from '../utils/dateUtils';
 
 @Controller('/customer')
 export class CustomerController {
@@ -23,7 +23,7 @@ export class CustomerController {
     private readonly customerService: CustomerService,
     private readonly paymentService: PaymentService,
     private readonly courseService: CourseService,
-    private readonly dateUtils: dateUtils,
+    private readonly dateUtils: DateUtils,
   ) {}
 
   @Post()
@@ -35,43 +35,15 @@ export class CustomerController {
   ) {
     try {
       const newCustomer = await this.customerService.createCustomer(customer);
-      const course = await this.courseService.listCourseById(
-        String(newCustomer.course),
-      );
-      const dueDate = await this.dateUtils.getDueDate(
-        course.startAt,
-        course.endAt,
-      );
-
-      await this.paymentService.createPayment({
-        id: uuidv4(),
-        billingType: 'BOLETO',
-        customer: newCustomer,
-        value: course.monthlyPayment,
-        dueDate: dueDate.toISOString().split('T')[0],
-        description: `${newCustomer.name}`,
-        externalReference: '',
-        discount: {
-          value: 20,
-          dueDateLimitDays: 0,
-          type: 'FIXED',
-        },
-        interest: {
-          value: 0.13,
-        },
-        fine: {
-          value: 10,
-        },
-        createdAt: new Date(),
-      });
 
       return response.status(HttpStatus.CREATED).send(newCustomer);
     } catch (error) {
+      console.log(error);
       return response.status(HttpStatus.BAD_REQUEST).send(error);
     }
   }
 
-  @Put(':id')
+  @Put('/:id')
   async updateCustomer(
     @Res()
     response: Response,
@@ -96,9 +68,11 @@ export class CustomerController {
   async listCustomers(
     @Res()
     response: Response,
+    @Query('course')
+    course?: string,
   ) {
     try {
-      const customers = await this.customerService.listCustomers();
+      const customers = await this.customerService.listCustomers(course);
 
       return response.status(HttpStatus.OK).json(customers);
     } catch (error) {
@@ -106,7 +80,7 @@ export class CustomerController {
     }
   }
 
-  @Get(':id')
+  @Get('/:id')
   async listCustomer(
     @Res()
     response: Response,
@@ -122,7 +96,7 @@ export class CustomerController {
     }
   }
 
-  @Delete(':id')
+  @Delete('/:id')
   async deleteCustomer(
     @Res()
     response: Response,
