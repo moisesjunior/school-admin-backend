@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Connection, Repository } from 'typeorm';
 import { Course } from '../infra/entities/course.entity';
 
 @Injectable()
@@ -8,44 +8,74 @@ export class CourseService {
   constructor(
     @InjectRepository(Course)
     private readonly courseRepository: Repository<Course>,
+    private connection: Connection,
   ) {}
 
   async createCourse(course: Course): Promise<Course> {
+    const queryRunner = this.connection.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
     try {
-      const newCourse = await this.courseRepository.save(course);
+      const newCourse = await queryRunner.manager.save(Course, course);
+
+      await queryRunner.commitTransaction();
 
       return newCourse;
     } catch (error) {
+      console.log(error);
+      await queryRunner.rollbackTransaction();
       return error.description;
+    } finally {
+      await queryRunner.release();
     }
   }
 
   async updateCourse(course: Course, id: string): Promise<Course> {
+    const queryRunner = this.connection.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
     try {
-      const courseToUpdate = await this.courseRepository.findOne(id);
+      const courseToUpdate: Course = await queryRunner.manager.findOne(
+        Course,
+        id,
+      );
 
       courseToUpdate.description = course.description;
       courseToUpdate.startAt = course.startAt;
       courseToUpdate.endAt = course.endAt;
       courseToUpdate.monthlyPayment = course.monthlyPayment;
 
-      await this.courseRepository.save(courseToUpdate);
+      await queryRunner.manager.save(Course, courseToUpdate);
+      await queryRunner.commitTransaction();
 
       return courseToUpdate;
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       return error.description;
+    } finally {
+      await queryRunner.release();
     }
   }
 
   async deleteCourseById(id: string) {
-    try {
-      const courseToRemove = await this.courseRepository.findOne(id);
+    const queryRunner = this.connection.createQueryRunner();
 
-      await this.courseRepository.remove(courseToRemove);
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      const courseToRemove = await queryRunner.manager.findOne(Course, id);
+
+      await queryRunner.manager.remove(Course, courseToRemove);
+      await queryRunner.commitTransaction();
 
       return {};
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       return error;
+    } finally {
+      await queryRunner.release();
     }
   }
 

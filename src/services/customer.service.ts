@@ -1,17 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import { HttpService, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Connection, Repository } from 'typeorm';
 import { Customer } from '../infra/entities/customer.entity';
-import axios from 'axios';
 
 @Injectable()
 export class CustomerService {
   constructor(
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
+    private httpService: HttpService,
+    private connection: Connection,
   ) {}
 
   async createCustomer(customer: Customer): Promise<Customer> {
+    const queryRunner = this.connection.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     const newAsaasCustomer = {
       name: customer.name,
       cpfCnpj: customer.cpf,
@@ -26,25 +32,35 @@ export class CustomerService {
     };
 
     try {
-      const asaasCustomer = await axios.post(
-        `${process.env.ASAAS_URL}/api/v3/customers`,
-        newAsaasCustomer,
-        {
+      const asaasCustomer = await this.httpService
+        .post(`${process.env.ASAAS_URL}/api/v3/customers`, newAsaasCustomer, {
           headers: {
             'Content-Type': 'application/json',
             access_token: process.env.ASAAS_API_KEY,
           },
-        },
-      );
+        })
+        .toPromise();
       customer.id = asaasCustomer.data.id;
 
-      return await this.customerRepository.save(customer);
+      await queryRunner.manager.save(Customer, customer);
+      await queryRunner.commitTransaction();
+
+      return customer;
     } catch (error) {
+      console.log(error);
+      await queryRunner.rollbackTransaction();
       return error.description;
+    } finally {
+      await queryRunner.release();
     }
   }
 
   async updateCustomer(customer: Customer, id: string) {
+    const queryRunner = this.connection.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     const updateCustomer = {
       name: customer.name,
       cpfCnpj: customer.cpf,
@@ -59,18 +75,23 @@ export class CustomerService {
     };
 
     try {
-      await axios.post(
-        `${process.env.ASAAS_URL}/api/v3/customers/${id}`,
-        updateCustomer,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            access_token: process.env.ASAAS_API_KEY,
+      await this.httpService
+        .post(
+          `${process.env.ASAAS_URL}/api/v3/customers/${id}`,
+          updateCustomer,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              access_token: process.env.ASAAS_API_KEY,
+            },
           },
-        },
-      );
+        )
+        .toPromise();
 
-      const customerToUpdate = await this.customerRepository.findOne(id);
+      const customerToUpdate: Customer = await queryRunner.manager.findOne(
+        Customer,
+        id,
+      );
 
       customerToUpdate.name = customer.name;
       customerToUpdate.email = customer.email;
@@ -98,36 +119,54 @@ export class CustomerService {
       customerToUpdate.useMedication = customer.useMedication;
       customerToUpdate.course = customer.course;
 
-      await this.customerRepository.save(customerToUpdate);
+      await queryRunner.manager.save(Customer, customerToUpdate);
+      await queryRunner.commitTransaction();
 
       return customerToUpdate;
     } catch (error) {
-      console.log(error.response.data);
+      await queryRunner.rollbackTransaction();
       return error.response.data;
+    } finally {
+      await queryRunner.release();
     }
   }
 
   async deleteCustomerById(id: string) {
-    try {
-      const customerToRemove = await this.customerRepository.findOne(id);
+    const queryRunner = this.connection.createQueryRunner();
 
-      await axios.delete(`${process.env.ASAAS_URL}/api/v3/customers/${id}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          access_token: process.env.ASAAS_API_KEY,
-        },
-      });
-      await this.customerRepository.remove(customerToRemove);
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const customerToRemove = await queryRunner.manager.findOne(Customer, id);
+
+      await this.httpService
+        .delete(`${process.env.ASAAS_URL}/api/v3/customers/${id}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            access_token: process.env.ASAAS_API_KEY,
+          },
+        })
+        .toPromise();
+      await queryRunner.manager.remove(Customer, customerToRemove);
+      await queryRunner.commitTransaction();
 
       return {};
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       return error;
+    } finally {
+      await queryRunner.release();
     }
   }
 
-  async listCustomers() {
+  async listCustomers(course?: string) {
     try {
-      const customers = await this.customerRepository.find();
+      const customers = await this.customerRepository.find({
+        where: {
+          ...(course !== undefined ? { course: course } : {}),
+        },
+      });
 
       return customers;
     } catch (error) {
