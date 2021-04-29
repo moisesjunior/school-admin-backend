@@ -30,7 +30,9 @@ export class Customer {
   @IsNotEmpty()
   name: string;
 
-  @Column('varchar')
+  @Column('varchar', {
+    unique: true,
+  })
   @IsString()
   @IsNotEmpty()
   cpf: string;
@@ -122,6 +124,7 @@ export class Customer {
 
   @Column({
     type: 'varchar',
+    unique: true,
     nullable: true,
   })
   @IsString()
