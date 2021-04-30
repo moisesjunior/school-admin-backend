@@ -84,14 +84,18 @@ export class Customer {
   @IsOptional()
   maritalStatus: string;
 
-  @Column('varchar')
+  @Column('varchar', {
+    nullable: true,
+  })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   address: string;
 
-  @Column('numeric')
+  @Column('numeric', {
+    nullable: true,
+  })
   @IsNumber()
-  @IsNotEmpty()
+  @IsOptional()
   addressNumber: number;
 
   @Column({
@@ -102,24 +106,32 @@ export class Customer {
   @IsOptional()
   complement: string;
 
-  @Column('varchar')
+  @Column('varchar', {
+    nullable: true,
+  })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   province: string;
 
-  @Column('varchar')
+  @Column('varchar', {
+    nullable: true,
+  })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   city: string;
 
-  @Column('varchar')
+  @Column('varchar', {
+    nullable: true,
+  })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   state: string;
 
-  @Column('varchar')
+  @Column('varchar', {
+    nullable: true,
+  })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   postalCode: string;
 
   @Column({
