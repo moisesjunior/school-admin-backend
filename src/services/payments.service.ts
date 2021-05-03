@@ -112,20 +112,27 @@ export class PaymentService {
     };
 
     try {
-      await this.httpService
-        .post(`${process.env.ASAAS_URL}/api/v3/payments/${id}`, updatePayment, {
-          headers: {
-            'Content-Type': 'application/json',
-            access_token: process.env.ASAAS_API_KEY,
-          },
-        })
-        .toPromise();
-
       const paymentToUpdate: Payment = await queryRunner.manager.findOne(
         Payment,
         id,
       );
 
+      if (paymentToUpdate.generateAssasPayment) {
+        await this.httpService
+          .post(
+            `${process.env.ASAAS_URL}/api/v3/payments/${id}`,
+            updatePayment,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                access_token: process.env.ASAAS_API_KEY,
+              },
+            },
+          )
+          .toPromise();
+      }
+
+      paymentToUpdate.customer = payment.customer;
       paymentToUpdate.billingType = payment.billingType;
       paymentToUpdate.value = payment.value;
       paymentToUpdate.dueDate = payment.dueDate;
@@ -159,14 +166,16 @@ export class PaymentService {
         id,
       );
 
-      await this.httpService
-        .delete(`${process.env.ASAAS_URL}/api/v3/payments/${id}`, {
-          headers: {
-            'Content-Type': 'application/json',
-            access_token: process.env.ASAAS_API_KEY,
-          },
-        })
-        .toPromise();
+      if (paymentToRemove.generateAssasPayment) {
+        await this.httpService
+          .delete(`${process.env.ASAAS_URL}/api/v3/payments/${id}`, {
+            headers: {
+              'Content-Type': 'application/json',
+              access_token: process.env.ASAAS_API_KEY,
+            },
+          })
+          .toPromise();
+      }
       await queryRunner.manager.remove(Payment, paymentToRemove);
       await queryRunner.commitTransaction();
       return {};
