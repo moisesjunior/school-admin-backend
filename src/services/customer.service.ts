@@ -106,12 +106,16 @@ export class CustomerService {
         .toPromise();
 
       customerToUpdate.name = customer.name;
+      customerToUpdate.cpf = customer.cpf;
       customerToUpdate.email = customer.email;
       customerToUpdate.phoneNumber = customer.phoneNumber;
       customerToUpdate.mobilePhone = customer.mobilePhone;
       customerToUpdate.birthdate = customer.birthdate;
       customerToUpdate.nationality = customer.nationality;
       customerToUpdate.maritalStatus = customer.maritalStatus;
+      customerToUpdate.rg = customer.rg;
+      customerToUpdate.emitter = customer.emitter;
+      customerToUpdate.emissionDate = customer.emissionDate;
       customerToUpdate.address = customer.address;
       customerToUpdate.addressNumber = customer.addressNumber;
       customerToUpdate.complement = customer.complement;
@@ -129,6 +133,8 @@ export class CustomerService {
       customerToUpdate.chronicDisease = customer.chronicDisease;
       customerToUpdate.hepatitis = customer.hepatitis;
       customerToUpdate.useMedication = customer.useMedication;
+      customerToUpdate.whichMedication = customer.whichMedication;
+      customerToUpdate.payment = customer.payment;
       customerToUpdate.course = customer.course;
 
       await queryRunner.manager.save(Customer, customerToUpdate);

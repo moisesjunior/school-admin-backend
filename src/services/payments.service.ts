@@ -62,7 +62,7 @@ export class PaymentService {
       ) {
         const customer = await queryRunner.manager.findOne(
           Customer,
-          payment.customer,
+          payment.customer.id,
         );
 
         if (customer === undefined) {
@@ -103,6 +103,7 @@ export class PaymentService {
       await queryRunner.commitTransaction();
       return newPayment;
     } catch (error) {
+      console.log(error);
       await queryRunner.rollbackTransaction();
       throw Error('Não foi possível salvar o pagamento!');
     } finally {
@@ -133,7 +134,7 @@ export class PaymentService {
       ) {
         const customer = await queryRunner.manager.findOne(
           Customer,
-          payment.customer,
+          payment.customer.id,
         );
 
         if (customer === undefined) {
