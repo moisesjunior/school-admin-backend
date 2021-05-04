@@ -1,4 +1,10 @@
-import { Module, HttpModule } from '@nestjs/common';
+import {
+  Module,
+  HttpModule,
+  NestModule,
+  MiddlewareConsumer,
+  RequestMethod,
+} from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Connection } from 'typeorm';
 import { ConfigModule } from '@nestjs/config';
@@ -20,6 +26,7 @@ import 'reflect-metadata';
 import { DateUtils } from './utils/dateUtils';
 import { ExpenditureController } from './controllers/expenditure.controller';
 import { ExpenditureService } from './services/expenditure.service';
+import { AuthMiddleware } from './middlewares/auth.middleware';
 
 @Module({
   imports: [
@@ -59,6 +66,16 @@ import { ExpenditureService } from './services/expenditure.service';
     DateUtils,
   ],
 })
-export class AppModule {
-  constructor(private connection: Connection) {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(AuthMiddleware)
+      .exclude({ path: '/payment/webhook', method: RequestMethod.POST })
+      .forRoutes(
+        PaymentController,
+        CourseController,
+        CustomerController,
+        ExpenditureController,
+      );
+  }
 }

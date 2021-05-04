@@ -34,20 +34,26 @@ export class CustomerController {
     customer: Customer,
   ) {
     try {
-      const findCustomer = await this.customerService.listCustomers({
+      const findCustomerCpf = await this.customerService.listCustomers({
         cpf: customer.cpf,
       });
 
-      if (findCustomer.length > 0) {
-        throw Error('Esse cpf de cliente já existe');
+      const findCustomerRg = await this.customerService.listCustomers({
+        rg: customer.rg,
+      });
+
+      if (findCustomerCpf.length > 0 || findCustomerRg.length > 0) {
+        throw Error('Já existe um cliente cadastrado com esse CPF ou RG!');
       }
 
       const newCustomer = await this.customerService.createCustomer(customer);
 
       return response.status(HttpStatus.CREATED).send(newCustomer);
     } catch (error) {
-      console.log(error);
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        title: 'Atenção!',
+        message: error.message,
+      });
     }
   }
 
@@ -61,6 +67,20 @@ export class CustomerController {
     customer: Customer,
   ) {
     try {
+      const findCustomerCpf = await this.customerService.listCustomers({
+        cpf: customer.cpf,
+        id,
+      });
+
+      const findCustomerRg = await this.customerService.listCustomers({
+        rg: customer.rg,
+        id,
+      });
+
+      if (findCustomerCpf.length !== 0 || findCustomerRg.length !== 0) {
+        throw Error('Já existe um cliente cadastrado com esse CPF e RG!');
+      }
+
       const updatedCustomer = await this.customerService.updateCustomer(
         customer,
         id,
@@ -68,7 +88,10 @@ export class CustomerController {
 
       return response.status(HttpStatus.OK).send(updatedCustomer);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        title: 'Atenção!',
+        message: error.message,
+      });
     }
   }
 
@@ -84,7 +107,10 @@ export class CustomerController {
 
       return response.status(HttpStatus.OK).json(customers);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        title: 'Atenção!',
+        message: error.message,
+      });
     }
   }
 
@@ -100,7 +126,10 @@ export class CustomerController {
 
       return response.status(HttpStatus.OK).json(customer);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        title: 'Atenção!',
+        message: error.message,
+      });
     }
   }
 
