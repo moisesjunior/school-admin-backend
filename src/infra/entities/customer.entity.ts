@@ -168,7 +168,7 @@ export class Customer {
   voterRegistration: string;
 
   @Column({
-    type: 'varchar',
+    type: 'boolean',
     nullable: true,
   })
   @IsBoolean()
@@ -254,6 +254,13 @@ export class Customer {
   @IsString()
   @IsOptional()
   whichMedication: string;
+
+  @Column('numeric', {
+    nullable: true,
+  })
+  @IsNumber()
+  @IsOptional()
+  payment: number;
 
   @CreateDateColumn()
   createdAt: Date;

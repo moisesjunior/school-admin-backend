@@ -34,6 +34,24 @@ type PaymentsType =
   | 'Falta (Estágio)'
   | 'Outros';
 
+type PaymentsStatus =
+  | 'PENDING'
+  | 'CONFIRMED'
+  | 'RECEIVED'
+  | 'RECEIVED_IN_CASH'
+  | 'OVERDUE'
+  | 'REFUND_REQUESTED'
+  | 'REFUNDED'
+  | 'CHARGEBACK_REQUESTED'
+  | 'REFUNDED'
+  | 'CHARGEBACK_REQUESTED'
+  | 'CHARGEBACK_DISPUTE'
+  | 'AWAITING_CHARGEBACK_REVERSAL'
+  | 'DUNNING_REQUESTED'
+  | 'DUNNING_RECEIVED'
+  | 'AWAITING_RISK_ANALYSIS'
+  | 'LOCAL';
+
 @Entity()
 export class Payment {
   @PrimaryColumn('varchar')
@@ -54,7 +72,7 @@ export class Payment {
   })
   @IsString()
   @IsNotEmpty()
-  status: string;
+  status: PaymentsStatus;
 
   @Column('varchar')
   @IsString()

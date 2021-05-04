@@ -29,7 +29,29 @@ export class PaymentController {
 
       return response.status(HttpStatus.CREATED).send(newPayment);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        title: 'Atenção!',
+        message: error.message,
+      });
+    }
+  }
+
+  @Post('/webhook')
+  async receiveUpdateFromAsaas(
+    @Res()
+    response: Response,
+    @Body()
+    payment: any,
+  ) {
+    try {
+      return response.status(200).send({
+        message: 'SHWO',
+      });
+    } catch (error) {
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        message: 'Atenção!',
+        title: error.message,
+      });
     }
   }
 
@@ -50,7 +72,10 @@ export class PaymentController {
 
       return response.status(HttpStatus.OK).send(updatedPayment);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        message: 'Atenção!',
+        title: error.message,
+      });
     }
   }
 
@@ -64,7 +89,10 @@ export class PaymentController {
 
       return response.status(HttpStatus.OK).json(payments);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        message: 'Atenção!',
+        title: error.message,
+      });
     }
   }
 
@@ -80,7 +108,10 @@ export class PaymentController {
 
       return response.status(HttpStatus.OK).json(payment);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        message: 'Atenção!',
+        title: error.message,
+      });
     }
   }
 

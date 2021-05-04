@@ -1,11 +1,13 @@
 import { HttpService, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Connection, Repository } from 'typeorm';
+import { Connection, Not, Repository } from 'typeorm';
 import { Customer } from '../infra/entities/customer.entity';
 
 interface findCustomer {
   course?: string;
   cpf?: string;
+  id?: string;
+  rg?: string;
 }
 
 @Injectable()
@@ -53,9 +55,9 @@ export class CustomerService {
 
       return customer;
     } catch (error) {
-      console.log(error);
+      console.log(error.response);
       await queryRunner.rollbackTransaction();
-      return error.description;
+      throw Error('Não foi possível salvar o cliente!');
     } finally {
       await queryRunner.release();
     }
@@ -81,6 +83,15 @@ export class CustomerService {
     };
 
     try {
+      const customerToUpdate: Customer = await queryRunner.manager.findOne(
+        Customer,
+        id,
+      );
+
+      if (customerToUpdate === undefined) {
+        throw Error('Não foi possível encontrar o cliente especificado.');
+      }
+
       await this.httpService
         .post(
           `${process.env.ASAAS_URL}/api/v3/customers/${id}`,
@@ -94,18 +105,17 @@ export class CustomerService {
         )
         .toPromise();
 
-      const customerToUpdate: Customer = await queryRunner.manager.findOne(
-        Customer,
-        id,
-      );
-
       customerToUpdate.name = customer.name;
+      customerToUpdate.cpf = customer.cpf;
       customerToUpdate.email = customer.email;
       customerToUpdate.phoneNumber = customer.phoneNumber;
       customerToUpdate.mobilePhone = customer.mobilePhone;
       customerToUpdate.birthdate = customer.birthdate;
       customerToUpdate.nationality = customer.nationality;
       customerToUpdate.maritalStatus = customer.maritalStatus;
+      customerToUpdate.rg = customer.rg;
+      customerToUpdate.emitter = customer.emitter;
+      customerToUpdate.emissionDate = customer.emissionDate;
       customerToUpdate.address = customer.address;
       customerToUpdate.addressNumber = customer.addressNumber;
       customerToUpdate.complement = customer.complement;
@@ -123,6 +133,8 @@ export class CustomerService {
       customerToUpdate.chronicDisease = customer.chronicDisease;
       customerToUpdate.hepatitis = customer.hepatitis;
       customerToUpdate.useMedication = customer.useMedication;
+      customerToUpdate.whichMedication = customer.whichMedication;
+      customerToUpdate.payment = customer.payment;
       customerToUpdate.course = customer.course;
 
       await queryRunner.manager.save(Customer, customerToUpdate);
@@ -131,7 +143,7 @@ export class CustomerService {
       return customerToUpdate;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      return error.response.data;
+      throw Error('Ocorreu um erro ao editar o cliente especificado!');
     } finally {
       await queryRunner.release();
     }
@@ -146,6 +158,13 @@ export class CustomerService {
     try {
       const customerToRemove = await queryRunner.manager.findOne(Customer, id);
 
+      if (customerToRemove === undefined) {
+        throw Error('Não foi possível encontrar o cliente selecionado!');
+      }
+
+      await queryRunner.manager.remove(Customer, customerToRemove);
+      await queryRunner.commitTransaction();
+
       await this.httpService
         .delete(`${process.env.ASAAS_URL}/api/v3/customers/${id}`, {
           headers: {
@@ -154,30 +173,30 @@ export class CustomerService {
           },
         })
         .toPromise();
-      await queryRunner.manager.remove(Customer, customerToRemove);
-      await queryRunner.commitTransaction();
 
       return {};
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      return error;
+      throw Error('Ocorreu um erro ao remover o cliente!');
     } finally {
       await queryRunner.release();
     }
   }
 
-  async listCustomers({ course, cpf }: findCustomer) {
+  async listCustomers({ course, cpf, id, rg }: findCustomer) {
     try {
       const customers = await this.customerRepository.find({
         where: {
           ...(course !== undefined ? { course: course } : {}),
           ...(cpf !== undefined ? { cpf: cpf } : {}),
+          ...(rg !== undefined ? { rg: rg } : {}),
+          ...(id !== undefined ? { id: Not(id) } : {}),
         },
       });
 
       return customers;
     } catch (error) {
-      return error;
+      throw Error('Não foi possível listar os clientes!');
     }
   }
 
@@ -191,7 +210,7 @@ export class CustomerService {
 
       return customer;
     } catch (error) {
-      return error;
+      throw Error('Não foi possível encontrar o cliente selecionado!');
     }
   }
 }
