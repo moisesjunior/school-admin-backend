@@ -39,10 +39,15 @@ export class CustomerController {
       });
 
       const findCustomerRg = await this.customerService.listCustomers({
-        rg: customer.rg,
+        cpf: customer.rg,
       });
 
-      if (findCustomerCpf.length > 0 || findCustomerRg.length > 0) {
+      if (
+        findCustomerCpf.length > 0 ||
+        (customer.rg !== undefined &&
+          customer.rg !== '' &&
+          findCustomerRg.length > 0)
+      ) {
         throw Error('Já existe um cliente cadastrado com esse CPF ou RG!');
       }
 
@@ -73,11 +78,16 @@ export class CustomerController {
       });
 
       const findCustomerRg = await this.customerService.listCustomers({
-        rg: customer.rg,
+        cpf: customer.rg,
         id,
       });
 
-      if (findCustomerCpf.length !== 0 || findCustomerRg.length !== 0) {
+      if (
+        findCustomerCpf.length !== 0 ||
+        (customer.rg !== undefined &&
+          customer.rg !== '' &&
+          findCustomerRg.length > 0)
+      ) {
         throw Error('Já existe um cliente cadastrado com esse CPF e RG!');
       }
 
