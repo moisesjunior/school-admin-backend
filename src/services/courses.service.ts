@@ -23,9 +23,8 @@ export class CourseService {
 
       return newCourse;
     } catch (error) {
-      console.log(error);
       await queryRunner.rollbackTransaction();
-      return error.description;
+      throw Error('Ocorreu um erro ao salvar o curso!');
     } finally {
       await queryRunner.release();
     }
@@ -53,7 +52,7 @@ export class CourseService {
       return courseToUpdate;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      return error.description;
+      throw Error('Ocorreu um erro ao editar o curso!');
     } finally {
       await queryRunner.release();
     }
@@ -73,7 +72,7 @@ export class CourseService {
       return {};
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      return error;
+      throw Error('Ocorreu um erro ao excluir o curso!');
     } finally {
       await queryRunner.release();
     }
@@ -85,7 +84,7 @@ export class CourseService {
 
       return courses;
     } catch (error) {
-      return error;
+      throw Error('Ocorreu um erro ao listar os cursos!');
     }
   }
 
@@ -99,7 +98,7 @@ export class CourseService {
 
       return course;
     } catch (error) {
-      return error;
+      throw Error('Ocorreu um erro ao listar o curso selecionado!');
     }
   }
 }

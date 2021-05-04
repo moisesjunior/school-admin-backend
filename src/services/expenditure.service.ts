@@ -23,7 +23,7 @@ export class ExpenditureService {
       return expenditure;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      return error;
+      throw Error('Não foi possível salvar a despesa!');
     } finally {
       await queryRunner.release();
     }
@@ -40,6 +40,10 @@ export class ExpenditureService {
         id,
       );
 
+      if (expenditureToUpdate === undefined) {
+        throw Error('Não foi possível encontrar a despesa especificada!');
+      }
+
       expenditureToUpdate.description = expenditure.description;
       expenditureToUpdate.dueDate = expenditure.dueDate;
       expenditureToUpdate.expenditureType = expenditure.expenditureType;
@@ -53,7 +57,7 @@ export class ExpenditureService {
       return expenditureToUpdate;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      return error.response.data;
+      throw Error('Não foi possível editar a despesa especificada!');
     } finally {
       await queryRunner.release();
     }
@@ -65,7 +69,7 @@ export class ExpenditureService {
 
       return expenditures;
     } catch (error) {
-      return error;
+      throw Error('Não foi possível listar as despesas!');
     }
   }
 
@@ -75,7 +79,7 @@ export class ExpenditureService {
 
       return expenditure;
     } catch (error) {
-      return error;
+      throw Error('Não foi possível encontrar as despesas especificadas!');
     }
   }
 
@@ -90,13 +94,17 @@ export class ExpenditureService {
         id,
       );
 
+      if (expenditureToRemove === undefined) {
+        throw Error('Não foi possível encontrar a despesa especificada!');
+      }
+
       await queryRunner.manager.remove(Expenditure, expenditureToRemove);
       await queryRunner.commitTransaction();
 
       return {};
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      return error;
+      throw Error('Não foi possível excluir a despesa especificada!');
     } finally {
       await queryRunner.release();
     }

@@ -2,7 +2,14 @@ import { HttpService, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Connection, Repository } from 'typeorm';
 import { Payment } from '../infra/entities/payments.entity';
+import { Customer } from '../infra/entities/customer.entity';
 import { v4 as uuid } from 'uuid';
+
+interface ReceiveInCash {
+  paymentDate: string;
+  value: string;
+  notifyCustomer: boolean;
+}
 
 @Injectable()
 export class PaymentService {
@@ -47,23 +54,36 @@ export class PaymentService {
       };
     }
 
-    const newAsaasPayment = {
-      customer: payment.customer,
-      billingType: payment.billingType,
-      value: payment.value,
-      dueDate: payment.dueDate,
-      description: payment.description,
-      externalReference: payment.externalReference,
-      installmentCount: payment.installmentCount,
-      installmentValue: payment.installmentValue,
-      discount: payment.discount,
-      interest: payment.interest,
-      fine: payment.fine,
-      postalService: false,
-    };
-
     try {
-      if (payment.generateAssasPayment) {
+      if (
+        payment.customer !== null &&
+        payment.customer !== undefined &&
+        payment.generateAssasPayment
+      ) {
+        const customer = await queryRunner.manager.findOne(
+          Customer,
+          payment.customer,
+        );
+
+        if (customer === undefined) {
+          throw Error('Não foi possível encontrar o cliente especificado!');
+        }
+
+        const newAsaasPayment = {
+          customer: payment.customer,
+          billingType: payment.billingType,
+          value: payment.value,
+          dueDate: payment.dueDate,
+          description: payment.description,
+          externalReference: payment.externalReference,
+          installmentCount: payment.installmentCount,
+          installmentValue: payment.installmentValue,
+          discount: payment.discount,
+          interest: payment.interest,
+          fine: payment.fine,
+          postalService: false,
+        };
+
         const asaasCustomer = await this.httpService
           .post(`${process.env.ASAAS_URL}/api/v3/payments`, newAsaasPayment, {
             headers: {
@@ -73,19 +93,18 @@ export class PaymentService {
           })
           .toPromise();
         payment.id = asaasCustomer.data.id;
-        payment.status = asaasCustomer.data.id;
+        payment.status = asaasCustomer.data.status;
       } else {
         payment.id = uuid();
-        payment.status = 'HISTÓRICO';
+        payment.status = 'LOCAL';
       }
 
       const newPayment = await queryRunner.manager.save(Payment, payment);
       await queryRunner.commitTransaction();
       return newPayment;
     } catch (error) {
-      console.log(error);
       await queryRunner.rollbackTransaction();
-      return error.response.data;
+      throw Error('Não foi possível salvar o pagamento!');
     } finally {
       await queryRunner.release();
     }
@@ -97,39 +116,59 @@ export class PaymentService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    const updatePayment = {
-      billingType: payment.billingType,
-      value: payment.value,
-      dueDate: payment.dueDate,
-      description: payment.description,
-      externalReference: payment.externalReference,
-      installmentCount: payment.installmentCount,
-      installmentValue: payment.installmentValue,
-      discount: payment.discount,
-      interest: payment.interest,
-      fine: payment.fine,
-      postalService: false,
-    };
-
     try {
       const paymentToUpdate: Payment = await queryRunner.manager.findOne(
         Payment,
         id,
       );
 
-      if (paymentToUpdate.generateAssasPayment) {
-        await this.httpService
-          .post(
-            `${process.env.ASAAS_URL}/api/v3/payments/${id}`,
-            updatePayment,
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                access_token: process.env.ASAAS_API_KEY,
+      if (paymentToUpdate === undefined) {
+        throw Error('Não foi possível encontrar o pagamento especificado!');
+      }
+
+      if (
+        payment.customer !== null &&
+        payment.customer !== undefined &&
+        payment.generateAssasPayment
+      ) {
+        const customer = await queryRunner.manager.findOne(
+          Customer,
+          payment.customer,
+        );
+
+        if (customer === undefined) {
+          throw Error('Não foi possível encontrar o cliente especificado!');
+        }
+
+        const updatePayment = {
+          customer: payment.customer,
+          billingType: payment.billingType,
+          value: payment.value,
+          dueDate: payment.dueDate,
+          description: payment.description,
+          externalReference: payment.externalReference,
+          installmentCount: payment.installmentCount,
+          installmentValue: payment.installmentValue,
+          discount: payment.discount,
+          interest: payment.interest,
+          fine: payment.fine,
+          postalService: false,
+        };
+
+        if (paymentToUpdate.generateAssasPayment) {
+          await this.httpService
+            .post(
+              `${process.env.ASAAS_URL}/api/v3/payments/${id}`,
+              updatePayment,
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  access_token: process.env.ASAAS_API_KEY,
+                },
               },
-            },
-          )
-          .toPromise();
+            )
+            .toPromise();
+        }
       }
 
       paymentToUpdate.customer = payment.customer;
@@ -149,7 +188,7 @@ export class PaymentService {
       return paymentToUpdate;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      return error.description;
+      throw Error('Não foi possível salvar o pagamento!');
     } finally {
       await queryRunner.release();
     }
@@ -158,13 +197,18 @@ export class PaymentService {
   async deletePaymentById(id: string) {
     const queryRunner = this.connection.createQueryRunner();
 
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
     try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
       const paymentToRemove: Payment = await queryRunner.manager.findOne(
         Payment,
         id,
       );
+
+      if (paymentToRemove === undefined) {
+        throw Error('Não foi possível encontrar o pagamento!');
+      }
 
       if (paymentToRemove.generateAssasPayment) {
         await this.httpService
@@ -181,7 +225,7 @@ export class PaymentService {
       return {};
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      return error;
+      throw Error('Não foi possível excluir o pagamento!');
     } finally {
       await queryRunner.release();
     }
@@ -193,7 +237,7 @@ export class PaymentService {
 
       return payments;
     } catch (error) {
-      return error;
+      throw Error('Não foi possível listar os pagamentos!');
     }
   }
 
@@ -207,7 +251,46 @@ export class PaymentService {
 
       return payment;
     } catch (error) {
-      return error;
+      throw Error('Não foi possível encontrar o pagamento!');
+    }
+  }
+
+  async receivePaymentInMoney(payment: ReceiveInCash, id: string) {
+    const queryRunner = this.connection.createQueryRunner();
+    try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      const paymentToUpdate = await queryRunner.manager.findOne(Payment, id);
+
+      if (paymentToUpdate === undefined) {
+        throw Error('Não foi possível encontrar o pagamento!');
+      }
+
+      const updatePayment = await this.httpService
+        .post(
+          `${process.env.ASAAS_URL}/api/v3/payments/${id}/receiveInCash`,
+          {
+            payment,
+          },
+          {
+            headers: {
+              access_token: process.env.ASAAS_API_KEY,
+            },
+          },
+        )
+        .toPromise();
+
+      paymentToUpdate.status = updatePayment.data.status;
+
+      await queryRunner.manager.save(Payment, paymentToUpdate);
+      await queryRunner.commitTransaction();
+      return paymentToUpdate;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw Error('Ocorreu um erro ao fazer o recebimento em dinheiro!');
+    } finally {
+      await queryRunner.release();
     }
   }
 }

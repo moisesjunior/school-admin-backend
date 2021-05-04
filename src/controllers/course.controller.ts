@@ -29,7 +29,10 @@ export class CourseController {
 
       return response.status(HttpStatus.CREATED).send(newCourse);
     } catch (error) {
-      return response.send(HttpStatus.BAD_REQUEST).send(error);
+      return response.send(HttpStatus.BAD_REQUEST).send({
+        title: 'Atenção!',
+        message: error.message,
+      });
     }
   }
 
@@ -47,7 +50,10 @@ export class CourseController {
 
       return response.status(HttpStatus.OK).send(updatedCourse);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.send(HttpStatus.BAD_REQUEST).send({
+        title: 'Atenção!',
+        message: error.message,
+      });
     }
   }
 
@@ -59,9 +65,12 @@ export class CourseController {
     try {
       const courses = await this.courseService.listCourses();
 
-      return response.status(HttpStatus.OK).json(courses);
+      return response.send(courses);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        title: 'Atenção!',
+        message: error.message,
+      });
     }
   }
 
@@ -77,7 +86,10 @@ export class CourseController {
 
       return response.status(HttpStatus.OK).json(course);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        title: 'Atenção!',
+        message: error.message,
+      });
     }
   }
 
@@ -93,7 +105,10 @@ export class CourseController {
 
       return response.status(HttpStatus.OK).json(course);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        title: 'Atenção!',
+        message: error.message,
+      });
     }
   }
 }

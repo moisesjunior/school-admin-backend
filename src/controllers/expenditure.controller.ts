@@ -31,8 +31,10 @@ export class ExpenditureController {
 
       return response.status(HttpStatus.CREATED).send(newExpenditure);
     } catch (error) {
-      console.log(error);
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        title: 'Atenção!',
+        message: error.message,
+      });
     }
   }
 
@@ -53,7 +55,10 @@ export class ExpenditureController {
 
       return response.status(HttpStatus.OK).send(updatedExpenditure);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        title: 'Atenção!',
+        message: error.message,
+      });
     }
   }
 
@@ -65,9 +70,12 @@ export class ExpenditureController {
     try {
       const expenditures = await this.expenditureService.listExpenditure();
 
-      return response.status(HttpStatus.OK).json(expenditures);
+      return response.status(HttpStatus.OK).send(expenditures);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        title: 'Atenção!',
+        message: error.message,
+      });
     }
   }
 
@@ -81,9 +89,12 @@ export class ExpenditureController {
     try {
       const expenditure = await this.expenditureService.listExpenditureById(id);
 
-      return response.status(HttpStatus.OK).json(expenditure);
+      return response.status(HttpStatus.OK).send(expenditure);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        title: 'Atenção!',
+        message: error.message,
+      });
     }
   }
 
@@ -97,9 +108,12 @@ export class ExpenditureController {
     try {
       const expenditure = await this.expenditureService.deleteExpenditure(id);
 
-      return response.status(HttpStatus.OK).json(expenditure);
+      return response.status(HttpStatus.OK).send(expenditure);
     } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send(error);
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        title: 'Atenção!',
+        message: error.message,
+      });
     }
   }
 }
