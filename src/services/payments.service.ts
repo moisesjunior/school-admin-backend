@@ -4,12 +4,11 @@ import { Connection, Repository } from 'typeorm';
 import { Payment } from '../infra/entities/payments.entity';
 import { Customer } from '../infra/entities/customer.entity';
 import { v4 as uuid } from 'uuid';
-
-interface ReceiveInCash {
-  paymentDate: string;
-  value: string;
-  notifyCustomer: boolean;
-}
+import {
+  paymentStatusFromEvents,
+  ReceivePayment,
+  ReceiveInCash,
+} from '../api-dto/receive-payment.dto';
 
 @Injectable()
 export class PaymentService {
@@ -113,7 +112,6 @@ export class PaymentService {
       await queryRunner.commitTransaction();
       return newPayment;
     } catch (error) {
-      console.log(error);
       await queryRunner.rollbackTransaction();
       throw Error('Não foi possível salvar o pagamento!');
     } finally {
@@ -263,6 +261,35 @@ export class PaymentService {
       return payment;
     } catch (error) {
       throw Error('Não foi possível encontrar o pagamento!');
+    }
+  }
+
+  async receivePayment({ event, payment }: ReceivePayment) {
+    const queryRunner = this.connection.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const paymentToUpdate = await queryRunner.manager.findOne(
+        Payment,
+        payment.id,
+      );
+
+      if (paymentToUpdate === undefined) {
+        throw Error('Não foi possível encontrar o pagamento!');
+      }
+
+      paymentToUpdate.status = paymentStatusFromEvents[event];
+
+      await queryRunner.manager.save(Payment, paymentToUpdate);
+      await queryRunner.commitTransaction();
+      return paymentToUpdate;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw Error('Ocorreu um erro ao fazer o recebimento em dinheiro!');
+    } finally {
+      await queryRunner.release();
     }
   }
 

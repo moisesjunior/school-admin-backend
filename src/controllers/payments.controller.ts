@@ -8,10 +8,12 @@ import {
   Res,
   HttpStatus,
   Delete,
+  Patch,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { Payment } from '../infra/entities/payments.entity';
 import { PaymentService } from '../services/payments.service';
+import { ReceivePayment, ReceiveInCash } from '../api-dto/receive-payment.dto';
 
 @Controller('/payment')
 export class PaymentController {
@@ -41,12 +43,39 @@ export class PaymentController {
     @Res()
     response: Response,
     @Body()
-    payment: any,
+    { event, payment }: ReceivePayment,
   ) {
     try {
-      return response.status(200).send({
-        message: 'SHWO',
+      const updatedPayment = await this.paymentService.receivePayment({
+        event,
+        payment,
       });
+
+      return response.status(HttpStatus.OK).send(updatedPayment);
+    } catch (error) {
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        message: 'Atenção!',
+        title: error.message,
+      });
+    }
+  }
+
+  @Patch(':id')
+  async receivePaymentInCash(
+    @Res()
+    response: Response,
+    @Param('id')
+    id: string,
+    @Body()
+    payment: ReceiveInCash,
+  ) {
+    try {
+      const updatedPayment = await this.paymentService.receivePaymentInMoney(
+        payment,
+        id,
+      );
+
+      return response.status(HttpStatus.OK).send(updatedPayment);
     } catch (error) {
       return response.status(HttpStatus.BAD_REQUEST).send({
         message: 'Atenção!',

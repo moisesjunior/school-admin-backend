@@ -55,7 +55,6 @@ export class CustomerService {
 
       return customer;
     } catch (error) {
-      console.log(error.response);
       await queryRunner.rollbackTransaction();
       throw Error('Não foi possível salvar o cliente!');
     } finally {

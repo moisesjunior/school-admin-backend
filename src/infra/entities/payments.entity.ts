@@ -36,13 +36,14 @@ type PaymentsType =
 
 type PaymentsStatus =
   | 'PENDING'
+  | 'DELETED'
+  | 'RESTORED'
   | 'CONFIRMED'
   | 'RECEIVED'
   | 'RECEIVED_IN_CASH'
+  | 'RECEIVED_IN_CASH_UNDONE'
   | 'OVERDUE'
   | 'REFUND_REQUESTED'
-  | 'REFUNDED'
-  | 'CHARGEBACK_REQUESTED'
   | 'REFUNDED'
   | 'CHARGEBACK_REQUESTED'
   | 'CHARGEBACK_DISPUTE'
@@ -72,7 +73,7 @@ export class Payment {
   })
   @IsString()
   @IsNotEmpty()
-  status: PaymentsStatus;
+  status: PaymentsStatus | string;
 
   @Column('varchar')
   @IsString()
