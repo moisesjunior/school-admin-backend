@@ -25,6 +25,14 @@ export class Customer {
   @PrimaryColumn('varchar')
   id: string;
 
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  @IsString()
+  @IsNotEmpty()
+  status: string;
+
   @Column('varchar')
   @IsString()
   @IsNotEmpty()

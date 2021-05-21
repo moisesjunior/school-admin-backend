@@ -111,9 +111,20 @@ export class CustomerController {
     response: Response,
     @Query('course')
     course?: string,
+    @Query('name')
+    name?: string,
+    @Query('cpf')
+    cpf?: string,
+    @Query('status')
+    status?: string,
   ) {
     try {
-      const customers = await this.customerService.listCustomers({ course });
+      const customers = await this.customerService.listCustomers({
+        course,
+        name,
+        cpf,
+        status,
+      });
 
       return response.status(HttpStatus.OK).json(customers);
     } catch (error) {

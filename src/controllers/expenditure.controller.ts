@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
@@ -66,9 +67,13 @@ export class ExpenditureController {
   async listExpenditures(
     @Res()
     response: Response,
+    @Query('referenceDate')
+    referenceDate: Date,
   ) {
     try {
-      const expenditures = await this.expenditureService.listExpenditure();
+      const expenditures = await this.expenditureService.listExpenditure({
+        referenceDate,
+      });
 
       return response.status(HttpStatus.OK).send(expenditures);
     } catch (error) {

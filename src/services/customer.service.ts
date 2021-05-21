@@ -1,14 +1,8 @@
 import { HttpService, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Connection, Not, Repository } from 'typeorm';
+import { Connection, ILike, Not, Repository } from 'typeorm';
+import { FindCustomer } from '../api-dto/customer.dto';
 import { Customer } from '../infra/entities/customer.entity';
-
-interface findCustomer {
-  course?: string;
-  cpf?: string;
-  id?: string;
-  rg?: string;
-}
 
 @Injectable()
 export class CustomerService {
@@ -182,13 +176,15 @@ export class CustomerService {
     }
   }
 
-  async listCustomers({ course, cpf, id, rg }: findCustomer) {
+  async listCustomers({ course, name, cpf, status, id, rg }: FindCustomer) {
     try {
       const customers = await this.customerRepository.find({
         where: {
-          ...(course !== undefined ? { course: course } : {}),
-          ...(cpf !== undefined ? { cpf: cpf } : {}),
-          ...(rg !== undefined ? { rg: rg } : {}),
+          ...(course !== undefined ? { course } : {}),
+          ...(name !== undefined ? { name: ILike(name) } : {}),
+          ...(status !== undefined ? { status } : {}),
+          ...(cpf !== undefined ? { cpf } : {}),
+          ...(rg !== undefined ? { rg } : {}),
           ...(id !== undefined ? { id: Not(id) } : {}),
         },
       });

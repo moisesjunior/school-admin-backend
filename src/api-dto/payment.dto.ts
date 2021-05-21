@@ -1,3 +1,5 @@
+import { Customer } from '../infra/entities/customer.entity';
+
 export interface ReceivePayment {
   event:
     | 'PAYMENT_CREATED'
@@ -67,3 +69,35 @@ export const paymentStatusFromEvents = {
   PAYMENT_DUNNING_RECEIVED: 'DUNNING_RECEIVED',
   PAYMENT_DUNNING_REQUESTED: 'DUNNING_REQUESTED',
 };
+
+export type PaymentsType =
+  | 'Mensalidade'
+  | 'Dependência'
+  | 'Matrícula'
+  | 'Falta (Estágio)'
+  | 'Outros';
+
+export type PaymentsStatus =
+  | 'PENDING'
+  | 'DELETED'
+  | 'RESTORED'
+  | 'CONFIRMED'
+  | 'RECEIVED'
+  | 'RECEIVED_IN_CASH'
+  | 'RECEIVED_IN_CASH_UNDONE'
+  | 'OVERDUE'
+  | 'REFUND_REQUESTED'
+  | 'REFUNDED'
+  | 'CHARGEBACK_REQUESTED'
+  | 'CHARGEBACK_DISPUTE'
+  | 'AWAITING_CHARGEBACK_REVERSAL'
+  | 'DUNNING_REQUESTED'
+  | 'DUNNING_RECEIVED'
+  | 'AWAITING_RISK_ANALYSIS'
+  | 'LOCAL';
+
+export interface FindPayments {
+  type?: PaymentsType;
+  status?: PaymentsStatus;
+  customer?: Customer;
+}

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Connection, Repository } from 'typeorm';
+import { FindExpenditures } from '../api-dto/expenditure.dto';
 import { Expenditure } from '../infra/entities/expenditure.entity';
 
 @Injectable()
@@ -63,9 +64,13 @@ export class ExpenditureService {
     }
   }
 
-  async listExpenditure() {
+  async listExpenditure({ referenceDate }: FindExpenditures) {
     try {
-      const expenditures = this.expenditureRepository.find();
+      const expenditures = this.expenditureRepository.find({
+        where: {
+          ...(referenceDate !== undefined ? { referenceDate } : {}),
+        },
+      });
 
       return expenditures;
     } catch (error) {

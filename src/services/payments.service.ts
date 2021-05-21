@@ -1,6 +1,6 @@
 import { HttpService, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Connection, Repository } from 'typeorm';
+import { Connection, ILike, Repository } from 'typeorm';
 import { Payment } from '../infra/entities/payments.entity';
 import { Customer } from '../infra/entities/customer.entity';
 import { v4 as uuid } from 'uuid';
@@ -8,7 +8,8 @@ import {
   paymentStatusFromEvents,
   ReceivePayment,
   ReceiveInCash,
-} from '../api-dto/receive-payment.dto';
+  FindPayments,
+} from '../api-dto/payment.dto';
 
 @Injectable()
 export class PaymentService {
@@ -240,9 +241,15 @@ export class PaymentService {
     }
   }
 
-  async listPayments() {
+  async listPayments({ type, status, customer }: FindPayments) {
     try {
-      const payments = await this.paymentRepository.find();
+      const payments = await this.paymentRepository.find({
+        where: {
+          ...(type !== undefined ? { type } : {}),
+          ...(status !== undefined ? { status } : {}),
+          ...(customer !== undefined ? { customer } : {}),
+        },
+      });
 
       return payments;
     } catch (error) {

@@ -17,6 +17,7 @@ import {
   IsString,
 } from 'class-validator';
 import { v4 as uuidv4 } from 'uuid';
+import { PaymentsStatus, PaymentsType } from '../../api-dto/payment.dto';
 
 interface Discount {
   value: number;
@@ -27,31 +28,6 @@ interface Discount {
 interface FineAndInterest {
   value: number;
 }
-type PaymentsType =
-  | 'Mensalidade'
-  | 'Dependência'
-  | 'Matrícula'
-  | 'Falta (Estágio)'
-  | 'Outros';
-
-type PaymentsStatus =
-  | 'PENDING'
-  | 'DELETED'
-  | 'RESTORED'
-  | 'CONFIRMED'
-  | 'RECEIVED'
-  | 'RECEIVED_IN_CASH'
-  | 'RECEIVED_IN_CASH_UNDONE'
-  | 'OVERDUE'
-  | 'REFUND_REQUESTED'
-  | 'REFUNDED'
-  | 'CHARGEBACK_REQUESTED'
-  | 'CHARGEBACK_DISPUTE'
-  | 'AWAITING_CHARGEBACK_REVERSAL'
-  | 'DUNNING_REQUESTED'
-  | 'DUNNING_RECEIVED'
-  | 'AWAITING_RISK_ANALYSIS'
-  | 'LOCAL';
 
 @Entity()
 export class Payment {

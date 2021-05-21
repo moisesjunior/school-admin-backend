@@ -9,11 +9,18 @@ import {
   HttpStatus,
   Delete,
   Patch,
+  Query,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { Payment } from '../infra/entities/payments.entity';
 import { PaymentService } from '../services/payments.service';
-import { ReceivePayment, ReceiveInCash } from '../api-dto/receive-payment.dto';
+import {
+  ReceivePayment,
+  ReceiveInCash,
+  PaymentsType,
+  PaymentsStatus,
+} from '../api-dto/payment.dto';
+import { Customer } from '../infra/entities/customer.entity';
 
 @Controller('/payment')
 export class PaymentController {
@@ -112,9 +119,19 @@ export class PaymentController {
   async listPayments(
     @Res()
     response: Response,
+    @Query('type')
+    type: PaymentsType,
+    @Query('status')
+    status: PaymentsStatus,
+    @Query('customer')
+    customer: Customer,
   ) {
     try {
-      const payments = await this.paymentService.listPayments();
+      const payments = await this.paymentService.listPayments({
+        type,
+        status,
+        customer,
+      });
 
       return response.status(HttpStatus.OK).json(payments);
     } catch (error) {
