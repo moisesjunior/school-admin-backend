@@ -11,7 +11,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { Expenditure } from '../infra/entities/expenditure.entity';
+import { ExpenditureModel } from '../infra/model/expenditure.model';
 import { ExpenditureService } from '../services/expenditure.service';
 
 @Controller('/expenditure')
@@ -23,7 +23,7 @@ export class ExpenditureController {
     @Res()
     response: Response,
     @Body()
-    expenditure: Expenditure,
+    expenditure: ExpenditureModel,
   ) {
     try {
       const newExpenditure = await this.expenditureService.createExpenditure(
@@ -46,7 +46,7 @@ export class ExpenditureController {
     @Param('id')
     id: string,
     @Body()
-    expenditure: Expenditure,
+    expenditure: ExpenditureModel,
   ) {
     try {
       const updatedExpenditure = await this.expenditureService.editExpenditure(
