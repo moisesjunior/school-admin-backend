@@ -6,27 +6,32 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Connection } from 'typeorm';
 import { ConfigModule } from '@nestjs/config';
 
-import { Course } from './infra/entities/course.entity';
-import { Payment } from './infra/entities/payments.entity';
-import { Customer } from './infra/entities/customer.entity';
-import { Expenditure } from './infra/entities/expenditure.entity';
+import { CourseModel } from './infra/model/course.model';
+import { PaymentModel } from './infra/model/payments.model';
+import { CustomerModel } from './infra/model/customer.model';
+import { ExpenditureModel } from './infra/model/expenditure.model';
 
 import { CourseController } from './controllers/course.controller';
 import { CustomerController } from './controllers/customer.controller';
 import { PaymentController } from './controllers/payments.controller';
+import { ExpenditureController } from './controllers/expenditure.controller';
 
 import { PaymentService } from './services/payments.service';
 import { CourseService } from './services/courses.service';
 import { CustomerService } from './services/customer.service';
+import { ExpenditureService } from './services/expenditure.service';
+
+import { CourseRepository } from './infra/repositories/course.repository';
 
 import 'reflect-metadata';
 import { DateUtils } from './utils/dateUtils';
-import { ExpenditureController } from './controllers/expenditure.controller';
-import { ExpenditureService } from './services/expenditure.service';
+
 import { AuthMiddleware } from './middlewares/auth.middleware';
+import { CustomerRepository } from './infra/repositories/customer.repository';
+import { AsaasCustomerService } from './utils/asaasCustomer.service';
+import { ExpenditureRepository } from './infra/repositories/expenditure.repository';
 
 @Module({
   imports: [
@@ -44,13 +49,18 @@ import { AuthMiddleware } from './middlewares/auth.middleware';
       username: process.env.TYPEORM_USERNAME,
       password: process.env.TYPEORM_PASSWORD,
       database: process.env.TYPEORM_DATABASE,
-      entities: [Course, Payment, Customer, Expenditure],
+      entities: [CourseModel, PaymentModel, CustomerModel, ExpenditureModel],
       migrations: ['build/infra/migrations/*{.ts,.js}'],
       migrationsTableName: 'migrations_typeorm',
       logging: true,
       migrationsRun: true,
     }),
-    TypeOrmModule.forFeature([Course, Payment, Customer, Expenditure]),
+    TypeOrmModule.forFeature([
+      CourseModel,
+      PaymentModel,
+      CustomerModel,
+      ExpenditureModel,
+    ]),
   ],
   controllers: [
     CourseController,
@@ -63,7 +73,11 @@ import { AuthMiddleware } from './middlewares/auth.middleware';
     CustomerService,
     PaymentService,
     ExpenditureService,
+    AsaasCustomerService,
     DateUtils,
+    CourseRepository,
+    CustomerRepository,
+    ExpenditureRepository,
   ],
 })
 export class AppModule implements NestModule {
