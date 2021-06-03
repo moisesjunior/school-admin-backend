@@ -11,7 +11,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { Customer } from '../infra/entities/customer.entity';
+import { CustomerModel } from '../infra/model/customer.model';
 import { CustomerService } from '../services/customer.service';
 import { PaymentService } from '../services/payments.service';
 import { CourseService } from '../services/courses.service';
@@ -31,26 +31,9 @@ export class CustomerController {
     @Res()
     response: Response,
     @Body()
-    customer: Customer,
+    customer: CustomerModel,
   ) {
     try {
-      const rg = customer.rg || '';
-
-      const findCustomerCpf = await this.customerService.listCustomers({
-        cpf: customer.cpf,
-      });
-
-      const findCustomerRg = await this.customerService.listCustomers({
-        cpf: customer.rg,
-      });
-
-      if (
-        findCustomerCpf.length > 0 ||
-        (rg !== '' && findCustomerRg.length > 0)
-      ) {
-        throw Error('Já existe um cliente cadastrado com esse CPF ou RG!');
-      }
-
       const newCustomer = await this.customerService.createCustomer(customer);
 
       return response.status(HttpStatus.CREATED).send(newCustomer);
@@ -69,28 +52,9 @@ export class CustomerController {
     @Param('id')
     id: string,
     @Body()
-    customer: Customer,
+    customer: CustomerModel,
   ) {
     try {
-      const rg = customer.rg || '';
-
-      const findCustomerCpf = await this.customerService.listCustomers({
-        cpf: customer.cpf,
-        id,
-      });
-
-      const findCustomerRg = await this.customerService.listCustomers({
-        cpf: customer.rg,
-        id,
-      });
-
-      if (
-        findCustomerCpf.length !== 0 ||
-        (rg !== '' && findCustomerRg.length > 0)
-      ) {
-        throw Error('Já existe um cliente cadastrado com esse CPF e RG!');
-      }
-
       const updatedCustomer = await this.customerService.updateCustomer(
         customer,
         id,
@@ -162,12 +126,6 @@ export class CustomerController {
     id: string,
   ) {
     try {
-      const customerFound = await this.customerService.listCustomerById(id);
-
-      if (customerFound === undefined) {
-        throw Error('Não foi possível encontrar um cliente!');
-      }
-
       const customer = await this.customerService.deleteCustomerById(id);
 
       return response.status(HttpStatus.OK).json(customer);
