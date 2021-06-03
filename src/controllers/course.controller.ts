@@ -10,7 +10,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { Course } from '../infra/entities/course.entity';
+import { CourseModel } from '../infra/model/course.model';
 import { CourseService } from '../services/courses.service';
 
 @Controller('/course')
@@ -22,7 +22,7 @@ export class CourseController {
     @Res()
     response: Response,
     @Body()
-    course: Course,
+    course: CourseModel,
   ) {
     try {
       const newCourse = await this.courseService.createCourse(course);
@@ -43,7 +43,7 @@ export class CourseController {
     @Res()
     response: Response,
     @Body()
-    course: Course,
+    course: CourseModel,
   ) {
     try {
       const updatedCourse = await this.courseService.updateCourse(course, id);
