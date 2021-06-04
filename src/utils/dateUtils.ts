@@ -5,25 +5,20 @@ export class DateUtils {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   constructor() {}
 
-  async getDueDate(startAt: Date, endAt: Date) {
+  async getDueDate(dueDate: string, endAt: Date) {
     if (new Date() < endAt) {
-      const addMonth =
-        new Date() > startAt && new Date() < endAt
-          ? new Date().getDay() > 10
-            ? 1
-            : 0
-          : startAt.getDay() > 10
-          ? 1
-          : 0;
+      const newDueDate = new Date(dueDate);
 
-      const month =
-        (new Date() > startAt ? new Date().getMonth() : startAt.getMonth()) +
-        addMonth;
+      const newDate = await this.checkWorkDay(
+        new Date(newDueDate.getFullYear(), newDueDate.getMonth() + 1, 10),
+      );
+      const stringDate = newDate.toLocaleDateString().split('/');
 
-      const year =
-        new Date() > startAt ? new Date().getFullYear() : startAt.getFullYear();
-
-      return this.checkWorkDay(new Date(year, month, 10));
+      return `${stringDate[2]}-${stringDate[0]}-${stringDate[1]}`;
+    } else {
+      throw Error(
+        'Não é possível gerar uma nova mensalidade para um curso já finalizado!',
+      );
     }
   }
 

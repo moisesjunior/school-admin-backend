@@ -34,6 +34,7 @@ export class AsaasPaymentService {
 
       return asaasCustomer.data;
     } catch (error) {
+      console.log(error.response.data);
       throw Error('Não foi possível salvar o pagamento no Asaas!');
     }
   }

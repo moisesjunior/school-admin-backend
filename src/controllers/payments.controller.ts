@@ -20,7 +20,6 @@ import {
   PaymentsType,
   PaymentsStatus,
 } from '../types/payment';
-import { CustomerModel } from '../infra/model/customer.model';
 
 @Controller('/payment')
 export class PaymentController {
@@ -45,27 +44,27 @@ export class PaymentController {
     }
   }
 
-  // @Post('/webhook')
-  // async receiveUpdateFromAsaas(
-  //   @Res()
-  //   response: Response,
-  //   @Body()
-  //   { event, payment }: ReceivePayment,
-  // ) {
-  //   try {
-  //     const updatedPayment = await this.paymentService.receivePayment({
-  //       event,
-  //       payment,
-  //     });
+  @Post('/webhook')
+  async receiveUpdateFromAsaas(
+    @Res()
+    response: Response,
+    @Body()
+    { event, payment }: ReceivePayment,
+  ) {
+    try {
+      const updatedPayment = await this.paymentService.receivePayment({
+        event,
+        payment,
+      });
 
-  //     return response.status(HttpStatus.OK).send(updatedPayment);
-  //   } catch (error) {
-  //     return response.status(HttpStatus.BAD_REQUEST).send({
-  //       message: 'Atenção!',
-  //       title: error.message,
-  //     });
-  //   }
-  // }
+      return response.status(HttpStatus.OK).send(updatedPayment);
+    } catch (error) {
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        message: 'Atenção!',
+        title: error.message,
+      });
+    }
+  }
 
   @Patch(':id')
   async receivePaymentInCash(

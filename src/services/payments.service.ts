@@ -11,6 +11,7 @@ import {
 import { PaymentRepository } from '../infra/repositories/payments.repository';
 import { CustomerRepository } from '../infra/repositories/customer.repository';
 import { AsaasPaymentService } from '../utils/asaasPayment.service';
+import { DateUtils } from '../utils/dateUtils';
 
 @Injectable()
 export class PaymentService {
@@ -18,6 +19,7 @@ export class PaymentService {
     private readonly paymentRepository: PaymentRepository,
     private readonly customerRepository: CustomerRepository,
     private readonly asaasPaymentService: AsaasPaymentService,
+    private readonly dateUtils: DateUtils,
   ) {}
 
   async createDiscountFineAndInterest(type: PaymentsType) {
@@ -172,34 +174,59 @@ export class PaymentService {
     return payment;
   }
 
-  // async receivePayment({ event, payment }: ReceivePayment) {
-  //   const queryRunner = this.connection.createQueryRunner();
+  async receivePayment({ event, payment }: ReceivePayment) {
+    const paymentToUpdate = await this.paymentRepository.listById(payment.id);
 
-  //   await queryRunner.connect();
-  //   await queryRunner.startTransaction();
+    if (paymentToUpdate === undefined) {
+      throw Error('Não foi possível encontrar o pagamento!');
+    }
 
-  //   try {
-  //     const paymentToUpdate = await queryRunner.manager.findOne(
-  //       PaymentModel,
-  //       payment.id,
-  //     );
+    if (event === 'PAYMENT_RECEIVED') {
+      if (
+        paymentToUpdate.generateAssasPayment &&
+        paymentToUpdate.type === 'Mensalidade'
+      ) {
+        await this.paymentRepository.updateStatus(
+          paymentStatusFromEvents[event],
+          payment.id,
+        );
+        const paymentToCreate = await this.paymentRepository.listById(
+          payment.id,
+        );
+        paymentToCreate.dueDate = await this.dateUtils.getDueDate(
+          paymentToCreate.dueDate,
+          paymentToCreate.customer.course.endAt,
+        );
+        paymentToCreate.value =
+          paymentToCreate.customer.payment === 0 ||
+          paymentToCreate.customer.payment === null
+            ? paymentToCreate.customer.course.monthlyPayment
+            : paymentToCreate.customer.payment;
 
-  //     if (paymentToUpdate === undefined) {
-  //       throw Error('Não foi possível encontrar o pagamento!');
-  //     }
+        console.log;
+        const asaasPayment = await this.asaasPaymentService.create(
+          paymentToCreate,
+        );
+        paymentToCreate.id = asaasPayment.id;
+        paymentToCreate.status = asaasPayment.status;
 
-  //     paymentToUpdate.status = paymentStatusFromEvents[event];
+        const newPayment = await this.paymentRepository.create(paymentToCreate);
+        return newPayment;
+      } else {
+        throw Error(
+          'Não é possível gerar uma nova cobrança pois não é recorrente!',
+        );
+      }
+    } else {
+      await this.paymentRepository.updateStatus(
+        paymentStatusFromEvents[event],
+        payment.id,
+      );
 
-  //     await queryRunner.manager.save(PaymentModel, paymentToUpdate);
-  //     await queryRunner.commitTransaction();
-  //     return paymentToUpdate;
-  //   } catch (error) {
-  //     await queryRunner.rollbackTransaction();
-  //     throw Error('Ocorreu um erro ao fazer o recebimento em dinheiro!');
-  //   } finally {
-  //     await queryRunner.release();
-  //   }
-  // }
+      const paymentUpdated = await this.paymentRepository.listById(payment.id);
+      return paymentUpdated;
+    }
+  }
 
   async receivePaymentInMoney(payment: ReceiveInCash, id: string) {
     const paymentToUpdate = await this.paymentRepository.listById(id);
