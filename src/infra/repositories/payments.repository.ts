@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { FindPayments } from '../../types/payment';
+import { FindPayments, PaymentsStatus } from '../../types/payment';
 import { PaymentModel } from '../model/payments.model';
 
 @Injectable()
@@ -25,6 +25,16 @@ export class PaymentRepository {
   async update(payment: PaymentModel, id: string) {
     try {
       const updated = await this.PaymentRepo.update(id, payment);
+
+      return updated.affected;
+    } catch (error) {
+      throw Error('Não foi possível editar um pagamento!');
+    }
+  }
+
+  async updateStatus(status: PaymentsStatus | string, id: string) {
+    try {
+      const updated = await this.PaymentRepo.update(id, { status });
 
       return updated.affected;
     } catch (error) {

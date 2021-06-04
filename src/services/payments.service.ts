@@ -201,31 +201,25 @@ export class PaymentService {
   //   }
   // }
 
-  // async receivePaymentInMoney(payment: ReceiveInCash, id: string) {
-  //   const queryRunner = this.connection.createQueryRunner();
-  //   try {
-  //     await queryRunner.connect();
-  //     await queryRunner.startTransaction();
+  async receivePaymentInMoney(payment: ReceiveInCash, id: string) {
+    const paymentToUpdate = await this.paymentRepository.listById(id);
 
-  //     const paymentToUpdate = await queryRunner.manager.findOne(
-  //       PaymentModel,
-  //       id,
-  //     );
+    if (paymentToUpdate === undefined) {
+      throw Error('Não foi possível encontrar o pagamento!');
+    }
 
-  //     if (paymentToUpdate === undefined) {
-  //       throw Error('Não foi possível encontrar o pagamento!');
-  //     }
+    if (paymentToUpdate.generateAssasPayment) {
+      const newStatus = await this.asaasPaymentService.receiveInCash(
+        payment,
+        id,
+      );
 
-  //     paymentToUpdate.status = updatePayment.data.status;
-
-  //     await queryRunner.manager.save(PaymentModel, paymentToUpdate);
-  //     await queryRunner.commitTransaction();
-  //     return paymentToUpdate;
-  //   } catch (error) {
-  //     await queryRunner.rollbackTransaction();
-  //     throw Error('Ocorreu um erro ao fazer o recebimento em dinheiro!');
-  //   } finally {
-  //     await queryRunner.release();
-  //   }
-  // }
+      await this.paymentRepository.updateStatus(newStatus, id);
+      const updatedPayment = await this.paymentRepository.listById(id);
+      return updatedPayment;
+    }
+    throw Error(
+      'Não é possível receber em dinheiro um boleto que não foi gerado no Asaas!',
+    );
+  }
 }

@@ -67,29 +67,28 @@ export class PaymentController {
   //   }
   // }
 
-  // @Patch(':id')
-  // async receivePaymentInCash(
-  //   @Res()
-  //   response: Response,
-  //   @Param('id')
-  //   id: string,
-  //   @Body()
-  //   payment: ReceiveInCash,
-  // ) {
-  //   try {
-  //     const updatedPayment = await this.paymentService.receivePaymentInMoney(
-  //       payment,
-  //       id,
-  //     );
-
-  //     return response.status(HttpStatus.OK).send(updatedPayment);
-  //   } catch (error) {
-  //     return response.status(HttpStatus.BAD_REQUEST).send({
-  //       message: 'Atenção!',
-  //       title: error.message,
-  //     });
-  //   }
-  // }
+  @Patch(':id')
+  async receivePaymentInCash(
+    @Res()
+    response: Response,
+    @Param('id')
+    id: string,
+    @Body()
+    payment: ReceiveInCash,
+  ) {
+    try {
+      const updatedPayment = await this.paymentService.receivePaymentInMoney(
+        payment,
+        id,
+      );
+      return response.status(HttpStatus.OK).send(updatedPayment);
+    } catch (error) {
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        message: 'Atenção!',
+        title: error.message,
+      });
+    }
+  }
 
   @Put(':id')
   async updatePayment(

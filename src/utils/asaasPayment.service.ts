@@ -76,9 +76,7 @@ export class AsaasPaymentService {
       const updatePayment = await this.httpService
         .post(
           `${process.env.ASAAS_URL}/api/v3/payments/${id}/receiveInCash`,
-          {
-            payment,
-          },
+          payment,
           {
             headers: {
               access_token: process.env.ASAAS_API_KEY,
@@ -87,7 +85,7 @@ export class AsaasPaymentService {
         )
         .toPromise();
 
-      return updatePayment.data;
+      return updatePayment.data.status;
     } catch (error) {
       throw Error('Não foi possível concluir o recebimento em dinheiro!');
     }
