@@ -1,9 +1,7 @@
-import { CustomerModel } from '../infra/model/customer.model';
-
 export interface FindPayments {
   type?: PaymentsType;
   status?: PaymentsStatus;
-  customer?: CustomerModel;
+  customer?: string;
 }
 
 export type PaymentsType =

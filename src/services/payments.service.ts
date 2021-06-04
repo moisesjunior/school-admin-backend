@@ -1,341 +1,231 @@
-import { HttpService, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Connection, ILike, Repository } from 'typeorm';
-import { Payment } from '../infra/entities/payments.entity';
-import { Customer } from '../infra/entities/customer.entity';
+import { Injectable } from '@nestjs/common';
+import { PaymentModel } from '../infra/model/payments.model';
 import { v4 as uuid } from 'uuid';
 import {
   paymentStatusFromEvents,
   ReceivePayment,
   ReceiveInCash,
   FindPayments,
-} from '../api-dto/payment.dto';
+  PaymentsType,
+} from '../types/payment';
+import { PaymentRepository } from '../infra/repositories/payments.repository';
+import { CustomerRepository } from '../infra/repositories/customer.repository';
+import { AsaasPaymentService } from '../utils/asaasPayment.service';
 
 @Injectable()
 export class PaymentService {
   constructor(
-    @InjectRepository(Payment)
-    private readonly paymentRepository: Repository<Payment>,
-    private httpService: HttpService,
-    private connection: Connection,
+    private readonly paymentRepository: PaymentRepository,
+    private readonly customerRepository: CustomerRepository,
+    private readonly asaasPaymentService: AsaasPaymentService,
   ) {}
 
-  async createPayment(payment: Payment): Promise<Payment> {
-    const queryRunner = this.connection.createQueryRunner();
+  async createDiscountFineAndInterest(type: PaymentsType) {
+    let discount = {
+      value: 0,
+      dueDateLimitDays: 0,
+      type: 'FIXED',
+    };
 
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    let interest = {
+      value: 0,
+    };
 
-    if (payment.type === 'Mensalidade') {
-      payment.discount = {
+    let fine = {
+      value: 0,
+    };
+
+    if (type === 'Mensalidade') {
+      discount = {
         value: 20,
         dueDateLimitDays: 5,
         type: 'FIXED',
       };
-      payment.interest = {
+      interest = {
         value: 1,
       };
-      payment.fine = {
+      fine = {
         value: 10,
       };
-    } else if (['Falta (Estágio)', 'Dependência'].includes(payment.type)) {
-      payment.discount = {
+    } else if (['Falta (Estágio)', 'Dependência'].includes(type)) {
+      discount = {
         value: 0,
         dueDateLimitDays: 0,
         type: 'FIXED',
       };
-      payment.interest = {
+      interest = {
         value: 1,
       };
-      payment.fine = {
+      fine = {
         value: 10,
       };
-    } else {
-      payment.discount = {
-        value: 0,
-        dueDateLimitDays: 0,
-        type: 'FIXED',
-      };
-      payment.interest = {
-        value: 0,
-      };
-      payment.fine = {
-        value: 0,
-      };
     }
 
-    try {
-      if (
-        payment.customer !== null &&
-        payment.customer !== undefined &&
-        payment.generateAssasPayment
-      ) {
-        const customer = await queryRunner.manager.findOne(
-          Customer,
-          payment.customer.id,
-        );
-
-        if (customer === undefined) {
-          throw Error('Não foi possível encontrar o cliente especificado!');
-        }
-
-        const newAsaasPayment = {
-          customer: payment.customer,
-          billingType: payment.billingType,
-          value: payment.value,
-          dueDate: payment.dueDate,
-          description: payment.description,
-          externalReference: payment.externalReference,
-          installmentCount: payment.installmentCount,
-          installmentValue: payment.installmentValue,
-          discount: payment.discount,
-          interest: payment.interest,
-          fine: payment.fine,
-          postalService: false,
-        };
-
-        const asaasCustomer = await this.httpService
-          .post(`${process.env.ASAAS_URL}/api/v3/payments`, newAsaasPayment, {
-            headers: {
-              'Content-Type': 'application/json',
-              access_token: process.env.ASAAS_API_KEY,
-            },
-          })
-          .toPromise();
-        payment.id = asaasCustomer.data.id;
-        payment.status = asaasCustomer.data.status;
-      } else {
-        payment.id = uuid();
-        payment.status = 'LOCAL';
-      }
-
-      const newPayment = await queryRunner.manager.save(Payment, payment);
-      await queryRunner.commitTransaction();
-      return newPayment;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw Error('Não foi possível salvar o pagamento!');
-    } finally {
-      await queryRunner.release();
-    }
+    return { discount, interest, fine };
   }
 
-  async updatePayment(payment: Payment, id: string) {
-    const queryRunner = this.connection.createQueryRunner();
+  async createPayment(payment: PaymentModel): Promise<PaymentModel> {
+    if (
+      payment.customer !== null &&
+      payment.customer !== undefined &&
+      payment.generateAssasPayment
+    ) {
+      const customer = await this.customerRepository.listById(
+        payment.customer.id,
+      );
+      if (customer === undefined) {
+        throw Error('Não foi possível encontrar o cliente especificado!');
+      }
 
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+      const {
+        discount,
+        interest,
+        fine,
+      } = await this.createDiscountFineAndInterest(payment.type);
+      payment.discount = discount;
+      payment.interest = interest;
+      payment.fine = fine;
 
-    try {
-      const paymentToUpdate: Payment = await queryRunner.manager.findOne(
-        Payment,
-        id,
+      const asaasPayment = await this.asaasPaymentService.create(payment);
+
+      payment.id = asaasPayment.id;
+      payment.status = asaasPayment.status;
+    } else {
+      payment.id = uuid();
+      payment.status = 'LOCAL';
+    }
+
+    const newPayment = await this.paymentRepository.create(payment);
+    return newPayment;
+  }
+
+  async updatePayment(payment: PaymentModel, id: string) {
+    const paymentToUpdate: PaymentModel = await this.paymentRepository.listById(
+      id,
+    );
+
+    if (paymentToUpdate === undefined) {
+      throw Error('Não foi possível encontrar o pagamento especificado!');
+    }
+
+    if (
+      payment.customer !== null &&
+      payment.customer !== undefined &&
+      payment.generateAssasPayment
+    ) {
+      const customer = await this.customerRepository.listById(
+        payment.customer.id,
       );
 
-      if (paymentToUpdate === undefined) {
-        throw Error('Não foi possível encontrar o pagamento especificado!');
+      if (customer === undefined) {
+        throw Error('Não foi possível encontrar o cliente especificado!');
       }
+      const {
+        discount,
+        interest,
+        fine,
+      } = await this.createDiscountFineAndInterest(payment.type);
+      payment.discount = discount;
+      payment.interest = interest;
+      payment.fine = fine;
 
-      if (
-        payment.customer !== null &&
-        payment.customer !== undefined &&
-        payment.generateAssasPayment
-      ) {
-        const customer = await queryRunner.manager.findOne(
-          Customer,
-          payment.customer.id,
-        );
-
-        if (customer === undefined) {
-          throw Error('Não foi possível encontrar o cliente especificado!');
-        }
-
-        const updatePayment = {
-          customer: payment.customer,
-          billingType: payment.billingType,
-          value: payment.value,
-          dueDate: payment.dueDate,
-          description: payment.description,
-          externalReference: payment.externalReference,
-          installmentCount: payment.installmentCount,
-          installmentValue: payment.installmentValue,
-          discount: payment.discount,
-          interest: payment.interest,
-          fine: payment.fine,
-          postalService: false,
-        };
-
-        if (paymentToUpdate.generateAssasPayment) {
-          await this.httpService
-            .post(
-              `${process.env.ASAAS_URL}/api/v3/payments/${id}`,
-              updatePayment,
-              {
-                headers: {
-                  'Content-Type': 'application/json',
-                  access_token: process.env.ASAAS_API_KEY,
-                },
-              },
-            )
-            .toPromise();
-        }
+      if (paymentToUpdate.generateAssasPayment) {
+        await this.asaasPaymentService.update(payment, id);
       }
-
-      paymentToUpdate.customer = payment.customer;
-      paymentToUpdate.billingType = payment.billingType;
-      paymentToUpdate.value = payment.value;
-      paymentToUpdate.dueDate = payment.dueDate;
-      paymentToUpdate.description = payment.description;
-      paymentToUpdate.externalReference = payment.externalReference;
-      paymentToUpdate.installmentCount = payment.installmentCount;
-      paymentToUpdate.installmentValue = payment.installmentValue;
-      paymentToUpdate.discount = payment.discount;
-      paymentToUpdate.interest = payment.interest;
-      paymentToUpdate.fine = payment.fine;
-
-      await queryRunner.manager.save(Payment, paymentToUpdate);
-      await queryRunner.commitTransaction();
-      return paymentToUpdate;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw Error('Não foi possível salvar o pagamento!');
-    } finally {
-      await queryRunner.release();
     }
+
+    await this.paymentRepository.update(payment, id);
+    const paymentUpdated = await this.paymentRepository.listById(id);
+    return paymentUpdated;
   }
 
   async deletePaymentById(id: string) {
-    const queryRunner = this.connection.createQueryRunner();
+    const paymentToRemove: PaymentModel = await this.paymentRepository.listById(
+      id,
+    );
 
-    try {
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-
-      const paymentToRemove: Payment = await queryRunner.manager.findOne(
-        Payment,
-        id,
-      );
-
-      if (paymentToRemove === undefined) {
-        throw Error('Não foi possível encontrar o pagamento!');
-      }
-
-      if (paymentToRemove.generateAssasPayment) {
-        await this.httpService
-          .delete(`${process.env.ASAAS_URL}/api/v3/payments/${id}`, {
-            headers: {
-              'Content-Type': 'application/json',
-              access_token: process.env.ASAAS_API_KEY,
-            },
-          })
-          .toPromise();
-      }
-      await queryRunner.manager.remove(Payment, paymentToRemove);
-      await queryRunner.commitTransaction();
-      return {};
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw Error('Não foi possível excluir o pagamento!');
-    } finally {
-      await queryRunner.release();
+    if (paymentToRemove === undefined) {
+      throw Error('Não foi possível encontrar o pagamento!');
     }
+
+    if (paymentToRemove.generateAssasPayment) {
+      await this.asaasPaymentService.delete(id);
+    }
+
+    await this.paymentRepository.delete(id);
+    return {};
   }
 
   async listPayments({ type, status, customer }: FindPayments) {
-    try {
-      const payments = await this.paymentRepository.find({
-        where: {
-          ...(type !== undefined ? { type } : {}),
-          ...(status !== undefined ? { status } : {}),
-          ...(customer !== undefined ? { customer } : {}),
-        },
-      });
+    const payment = await this.paymentRepository.list({
+      type,
+      status,
+      customer,
+    });
 
-      return payments;
-    } catch (error) {
-      throw Error('Não foi possível listar os pagamentos!');
-    }
+    return payment;
   }
 
   async listPaymentById(id: string) {
-    try {
-      const payment = await this.paymentRepository.findOne({
-        where: {
-          id: id,
-        },
-      });
+    const payment = await this.paymentRepository.listById(id);
 
-      return payment;
-    } catch (error) {
-      throw Error('Não foi possível encontrar o pagamento!');
-    }
+    return payment;
   }
 
-  async receivePayment({ event, payment }: ReceivePayment) {
-    const queryRunner = this.connection.createQueryRunner();
+  // async receivePayment({ event, payment }: ReceivePayment) {
+  //   const queryRunner = this.connection.createQueryRunner();
 
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  //   await queryRunner.connect();
+  //   await queryRunner.startTransaction();
 
-    try {
-      const paymentToUpdate = await queryRunner.manager.findOne(
-        Payment,
-        payment.id,
-      );
+  //   try {
+  //     const paymentToUpdate = await queryRunner.manager.findOne(
+  //       PaymentModel,
+  //       payment.id,
+  //     );
 
-      if (paymentToUpdate === undefined) {
-        throw Error('Não foi possível encontrar o pagamento!');
-      }
+  //     if (paymentToUpdate === undefined) {
+  //       throw Error('Não foi possível encontrar o pagamento!');
+  //     }
 
-      paymentToUpdate.status = paymentStatusFromEvents[event];
+  //     paymentToUpdate.status = paymentStatusFromEvents[event];
 
-      await queryRunner.manager.save(Payment, paymentToUpdate);
-      await queryRunner.commitTransaction();
-      return paymentToUpdate;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw Error('Ocorreu um erro ao fazer o recebimento em dinheiro!');
-    } finally {
-      await queryRunner.release();
-    }
-  }
+  //     await queryRunner.manager.save(PaymentModel, paymentToUpdate);
+  //     await queryRunner.commitTransaction();
+  //     return paymentToUpdate;
+  //   } catch (error) {
+  //     await queryRunner.rollbackTransaction();
+  //     throw Error('Ocorreu um erro ao fazer o recebimento em dinheiro!');
+  //   } finally {
+  //     await queryRunner.release();
+  //   }
+  // }
 
-  async receivePaymentInMoney(payment: ReceiveInCash, id: string) {
-    const queryRunner = this.connection.createQueryRunner();
-    try {
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
+  // async receivePaymentInMoney(payment: ReceiveInCash, id: string) {
+  //   const queryRunner = this.connection.createQueryRunner();
+  //   try {
+  //     await queryRunner.connect();
+  //     await queryRunner.startTransaction();
 
-      const paymentToUpdate = await queryRunner.manager.findOne(Payment, id);
+  //     const paymentToUpdate = await queryRunner.manager.findOne(
+  //       PaymentModel,
+  //       id,
+  //     );
 
-      if (paymentToUpdate === undefined) {
-        throw Error('Não foi possível encontrar o pagamento!');
-      }
+  //     if (paymentToUpdate === undefined) {
+  //       throw Error('Não foi possível encontrar o pagamento!');
+  //     }
 
-      const updatePayment = await this.httpService
-        .post(
-          `${process.env.ASAAS_URL}/api/v3/payments/${id}/receiveInCash`,
-          {
-            payment,
-          },
-          {
-            headers: {
-              access_token: process.env.ASAAS_API_KEY,
-            },
-          },
-        )
-        .toPromise();
+  //     paymentToUpdate.status = updatePayment.data.status;
 
-      paymentToUpdate.status = updatePayment.data.status;
-
-      await queryRunner.manager.save(Payment, paymentToUpdate);
-      await queryRunner.commitTransaction();
-      return paymentToUpdate;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw Error('Ocorreu um erro ao fazer o recebimento em dinheiro!');
-    } finally {
-      await queryRunner.release();
-    }
-  }
+  //     await queryRunner.manager.save(PaymentModel, paymentToUpdate);
+  //     await queryRunner.commitTransaction();
+  //     return paymentToUpdate;
+  //   } catch (error) {
+  //     await queryRunner.rollbackTransaction();
+  //     throw Error('Ocorreu um erro ao fazer o recebimento em dinheiro!');
+  //   } finally {
+  //     await queryRunner.release();
+  //   }
+  // }
 }

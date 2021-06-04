@@ -32,6 +32,8 @@ import { AuthMiddleware } from './middlewares/auth.middleware';
 import { CustomerRepository } from './infra/repositories/customer.repository';
 import { AsaasCustomerService } from './utils/asaasCustomer.service';
 import { ExpenditureRepository } from './infra/repositories/expenditure.repository';
+import { PaymentRepository } from './infra/repositories/payments.repository';
+import { AsaasPaymentService } from './utils/asaasPayment.service';
 
 @Module({
   imports: [
@@ -74,10 +76,12 @@ import { ExpenditureRepository } from './infra/repositories/expenditure.reposito
     PaymentService,
     ExpenditureService,
     AsaasCustomerService,
+    AsaasPaymentService,
     DateUtils,
     CourseRepository,
     CustomerRepository,
     ExpenditureRepository,
+    PaymentRepository,
   ],
 })
 export class AppModule implements NestModule {

@@ -12,15 +12,15 @@ import {
   Query,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { Payment } from '../infra/entities/payments.entity';
+import { PaymentModel } from '../infra/model/payments.model';
 import { PaymentService } from '../services/payments.service';
 import {
   ReceivePayment,
   ReceiveInCash,
   PaymentsType,
   PaymentsStatus,
-} from '../api-dto/payment.dto';
-import { Customer } from '../infra/entities/customer.entity';
+} from '../types/payment';
+import { CustomerModel } from '../infra/model/customer.model';
 
 @Controller('/payment')
 export class PaymentController {
@@ -31,7 +31,7 @@ export class PaymentController {
     @Res()
     response: Response,
     @Body()
-    payment: Payment,
+    payment: PaymentModel,
   ) {
     try {
       const newPayment = await this.paymentService.createPayment(payment);
@@ -45,51 +45,51 @@ export class PaymentController {
     }
   }
 
-  @Post('/webhook')
-  async receiveUpdateFromAsaas(
-    @Res()
-    response: Response,
-    @Body()
-    { event, payment }: ReceivePayment,
-  ) {
-    try {
-      const updatedPayment = await this.paymentService.receivePayment({
-        event,
-        payment,
-      });
+  // @Post('/webhook')
+  // async receiveUpdateFromAsaas(
+  //   @Res()
+  //   response: Response,
+  //   @Body()
+  //   { event, payment }: ReceivePayment,
+  // ) {
+  //   try {
+  //     const updatedPayment = await this.paymentService.receivePayment({
+  //       event,
+  //       payment,
+  //     });
 
-      return response.status(HttpStatus.OK).send(updatedPayment);
-    } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send({
-        message: 'Atenção!',
-        title: error.message,
-      });
-    }
-  }
+  //     return response.status(HttpStatus.OK).send(updatedPayment);
+  //   } catch (error) {
+  //     return response.status(HttpStatus.BAD_REQUEST).send({
+  //       message: 'Atenção!',
+  //       title: error.message,
+  //     });
+  //   }
+  // }
 
-  @Patch(':id')
-  async receivePaymentInCash(
-    @Res()
-    response: Response,
-    @Param('id')
-    id: string,
-    @Body()
-    payment: ReceiveInCash,
-  ) {
-    try {
-      const updatedPayment = await this.paymentService.receivePaymentInMoney(
-        payment,
-        id,
-      );
+  // @Patch(':id')
+  // async receivePaymentInCash(
+  //   @Res()
+  //   response: Response,
+  //   @Param('id')
+  //   id: string,
+  //   @Body()
+  //   payment: ReceiveInCash,
+  // ) {
+  //   try {
+  //     const updatedPayment = await this.paymentService.receivePaymentInMoney(
+  //       payment,
+  //       id,
+  //     );
 
-      return response.status(HttpStatus.OK).send(updatedPayment);
-    } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).send({
-        message: 'Atenção!',
-        title: error.message,
-      });
-    }
-  }
+  //     return response.status(HttpStatus.OK).send(updatedPayment);
+  //   } catch (error) {
+  //     return response.status(HttpStatus.BAD_REQUEST).send({
+  //       message: 'Atenção!',
+  //       title: error.message,
+  //     });
+  //   }
+  // }
 
   @Put(':id')
   async updatePayment(
@@ -98,7 +98,7 @@ export class PaymentController {
     @Param('id')
     id: string,
     @Body()
-    payment: Payment,
+    payment: PaymentModel,
   ) {
     try {
       const updatedPayment = await this.paymentService.updatePayment(
@@ -108,6 +108,7 @@ export class PaymentController {
 
       return response.status(HttpStatus.OK).send(updatedPayment);
     } catch (error) {
+      console.log(error);
       return response.status(HttpStatus.BAD_REQUEST).send({
         message: 'Atenção!',
         title: error.message,
@@ -124,7 +125,7 @@ export class PaymentController {
     @Query('status')
     status: PaymentsStatus,
     @Query('customer')
-    customer: Customer,
+    customer: string,
   ) {
     try {
       const payments = await this.paymentService.listPayments({
