@@ -203,14 +203,8 @@ export class PaymentService {
             ? paymentToCreate.customer.course.monthlyPayment
             : paymentToCreate.customer.payment;
 
-        console.log;
-        const asaasPayment = await this.asaasPaymentService.create(
-          paymentToCreate,
-        );
-        paymentToCreate.id = asaasPayment.id;
-        paymentToCreate.status = asaasPayment.status;
+        const newPayment = await this.createPayment(paymentToCreate);
 
-        const newPayment = await this.paymentRepository.create(paymentToCreate);
         return newPayment;
       } else {
         throw Error(
