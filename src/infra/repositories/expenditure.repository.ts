@@ -32,11 +32,12 @@ export class ExpenditureRepository {
     }
   }
 
-  async list({ referenceDate }: FindExpenditures) {
+  async list({ referenceDate, expenditureType }: FindExpenditures) {
     try {
       const expenditures = this.expenditureRepo.find({
         where: {
           ...(referenceDate !== undefined ? { referenceDate } : {}),
+          ...(expenditureType !== undefined ? { expenditureType } : {}),
         },
       });
 

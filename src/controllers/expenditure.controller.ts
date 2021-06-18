@@ -69,10 +69,13 @@ export class ExpenditureController {
     response: Response,
     @Query('referenceDate')
     referenceDate: Date,
+    @Query('expenditureType')
+    expenditureType: string,
   ) {
     try {
       const expenditures = await this.expenditureService.listExpenditure({
         referenceDate,
+        expenditureType,
       });
 
       return response.status(HttpStatus.OK).send(expenditures);

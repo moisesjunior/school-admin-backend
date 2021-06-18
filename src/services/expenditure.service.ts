@@ -26,8 +26,11 @@ export class ExpenditureService {
     return expenditureUpdated;
   }
 
-  async listExpenditure({ referenceDate }: FindExpenditures) {
-    const expenditures = this.expenditureRepository.list({ referenceDate });
+  async listExpenditure({ referenceDate, expenditureType }: FindExpenditures) {
+    const expenditures = this.expenditureRepository.list({
+      referenceDate,
+      expenditureType,
+    });
 
     return expenditures;
   }
