@@ -1,104 +1,69 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Connection, Repository } from 'typeorm';
-import { Course } from '../infra/entities/course.entity';
+import { CourseModel } from '../infra/model/course.model';
+import { CourseRepository } from '../infra/repositories/course.repository';
 
 @Injectable()
 export class CourseService {
-  constructor(
-    @InjectRepository(Course)
-    private readonly courseRepository: Repository<Course>,
-    private connection: Connection,
-  ) {}
+  constructor(private readonly courseRepository: CourseRepository) {}
 
-  async createCourse(course: Course): Promise<Course> {
-    const queryRunner = this.connection.createQueryRunner();
-
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  async createCourse(course: CourseModel): Promise<CourseModel> {
     try {
-      const newCourse = await queryRunner.manager.save(Course, course);
-
-      await queryRunner.commitTransaction();
+      const newCourse = await this.courseRepository.create(course);
 
       return newCourse;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw Error('Ocorreu um erro ao salvar o curso!');
-    } finally {
-      await queryRunner.release();
+      throw Error(error.message);
     }
   }
 
-  async updateCourse(course: Course, id: string): Promise<Course> {
-    const queryRunner = this.connection.createQueryRunner();
-
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  async updateCourse(course: CourseModel, id: string): Promise<CourseModel> {
     try {
-      const courseToUpdate: Course = await queryRunner.manager.findOne(
-        Course,
-        id,
-      );
+      const existCourse = await this.courseRepository.listById(id);
 
-      courseToUpdate.description = course.description;
-      courseToUpdate.startAt = course.startAt;
-      courseToUpdate.endAt = course.endAt;
-      courseToUpdate.monthlyPayment = course.monthlyPayment;
+      if (!existCourse) {
+        throw Error('Não foi possível encontrar o curso');
+      }
 
-      await queryRunner.manager.save(Course, courseToUpdate);
-      await queryRunner.commitTransaction();
-
-      return courseToUpdate;
+      await this.courseRepository.update(course, id);
+      const courseUpdated = await this.courseRepository.listById(id);
+      return courseUpdated;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw Error('Ocorreu um erro ao editar o curso!');
-    } finally {
-      await queryRunner.release();
+      throw Error(error.message);
     }
   }
 
-  async deleteCourseById(id: string) {
-    const queryRunner = this.connection.createQueryRunner();
-
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  async deleteCourseById(id: string): Promise<void> {
     try {
-      const courseToRemove = await queryRunner.manager.findOne(Course, id);
+      const existCourse = await this.courseRepository.listById(id);
 
-      await queryRunner.manager.remove(Course, courseToRemove);
-      await queryRunner.commitTransaction();
+      if (!existCourse) {
+        throw Error('Não foi possível encontrar o curso');
+      }
 
-      return {};
+      await this.courseRepository.delete(id);
+      return;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw Error('Ocorreu um erro ao excluir o curso!');
-    } finally {
-      await queryRunner.release();
+      throw Error(error.message);
     }
   }
 
-  async listCourses() {
+  async listCourses(): Promise<CourseModel[]> {
     try {
-      const courses = await this.courseRepository.find();
+      const courses = await this.courseRepository.list();
 
       return courses;
     } catch (error) {
-      throw Error('Ocorreu um erro ao listar os cursos!');
+      throw Error(error.message);
     }
   }
 
-  async listCourseById(id: string): Promise<Course> {
+  async listCourseById(id: string): Promise<CourseModel> {
     try {
-      const course = await this.courseRepository.findOne({
-        where: {
-          id: id,
-        },
-      });
+      const course = this.courseRepository.listById(id);
 
       return course;
     } catch (error) {
-      throw Error('Ocorreu um erro ao listar o curso selecionado!');
+      throw Error(error.message);
     }
   }
 }

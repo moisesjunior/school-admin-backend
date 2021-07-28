@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
 } from 'typeorm';
-import { Customer } from './customer.entity';
+import { CustomerModel } from './customer.model';
 import {
   IsBoolean,
   IsNotEmpty,
@@ -17,6 +17,7 @@ import {
   IsString,
 } from 'class-validator';
 import { v4 as uuidv4 } from 'uuid';
+import { PaymentsStatus, PaymentsType } from '../../types/payment';
 
 interface Discount {
   value: number;
@@ -27,33 +28,11 @@ interface Discount {
 interface FineAndInterest {
   value: number;
 }
-type PaymentsType =
-  | 'Mensalidade'
-  | 'Dependência'
-  | 'Matrícula'
-  | 'Falta (Estágio)'
-  | 'Outros';
 
-type PaymentsStatus =
-  | 'PENDING'
-  | 'CONFIRMED'
-  | 'RECEIVED'
-  | 'RECEIVED_IN_CASH'
-  | 'OVERDUE'
-  | 'REFUND_REQUESTED'
-  | 'REFUNDED'
-  | 'CHARGEBACK_REQUESTED'
-  | 'REFUNDED'
-  | 'CHARGEBACK_REQUESTED'
-  | 'CHARGEBACK_DISPUTE'
-  | 'AWAITING_CHARGEBACK_REVERSAL'
-  | 'DUNNING_REQUESTED'
-  | 'DUNNING_RECEIVED'
-  | 'AWAITING_RISK_ANALYSIS'
-  | 'LOCAL';
-
-@Entity()
-export class Payment {
+@Entity({
+  name: 'payment',
+})
+export class PaymentModel {
   @PrimaryColumn('varchar')
   id: string = uuidv4();
 
@@ -72,7 +51,7 @@ export class Payment {
   })
   @IsString()
   @IsNotEmpty()
-  status: PaymentsStatus;
+  status: PaymentsStatus | string;
 
   @Column('varchar')
   @IsString()
@@ -145,9 +124,9 @@ export class Payment {
   @DeleteDateColumn()
   deletedAt?: Date;
 
-  @ManyToOne(() => Customer, (customer) => customer.payments, {
+  @ManyToOne(() => CustomerModel, (customer) => customer.payments, {
     eager: true,
     nullable: true,
   })
-  customer: Customer;
+  customer: CustomerModel;
 }

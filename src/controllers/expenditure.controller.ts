@@ -7,10 +7,11 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { Expenditure } from '../infra/entities/expenditure.entity';
+import { ExpenditureModel } from '../infra/model/expenditure.model';
 import { ExpenditureService } from '../services/expenditure.service';
 
 @Controller('/expenditure')
@@ -22,7 +23,7 @@ export class ExpenditureController {
     @Res()
     response: Response,
     @Body()
-    expenditure: Expenditure,
+    expenditure: ExpenditureModel,
   ) {
     try {
       const newExpenditure = await this.expenditureService.createExpenditure(
@@ -45,7 +46,7 @@ export class ExpenditureController {
     @Param('id')
     id: string,
     @Body()
-    expenditure: Expenditure,
+    expenditure: ExpenditureModel,
   ) {
     try {
       const updatedExpenditure = await this.expenditureService.editExpenditure(
@@ -66,9 +67,16 @@ export class ExpenditureController {
   async listExpenditures(
     @Res()
     response: Response,
+    @Query('referenceDate')
+    referenceDate: Date,
+    @Query('expenditureType')
+    expenditureType: string,
   ) {
     try {
-      const expenditures = await this.expenditureService.listExpenditure();
+      const expenditures = await this.expenditureService.listExpenditure({
+        referenceDate,
+        expenditureType,
+      });
 
       return response.status(HttpStatus.OK).send(expenditures);
     } catch (error) {

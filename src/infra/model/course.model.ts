@@ -7,12 +7,14 @@ import {
   DeleteDateColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Customer } from './customer.entity';
+import { CustomerModel } from './customer.model';
 import { IsDateString, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 import { v4 as uuid } from 'uuid';
 
-@Entity()
-export class Course {
+@Entity({
+  name: 'course',
+})
+export class CourseModel {
   @PrimaryGeneratedColumn('uuid')
   id: string = uuid();
 
@@ -45,6 +47,6 @@ export class Course {
   @DeleteDateColumn()
   deletedAt?: Date;
 
-  @OneToMany(() => Customer, (customer) => customer.course)
-  customers: Customer[];
+  @OneToMany(() => CustomerModel, (customer) => customer.course)
+  customers: CustomerModel[];
 }

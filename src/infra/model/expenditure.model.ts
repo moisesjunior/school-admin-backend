@@ -15,8 +15,10 @@ import {
 } from 'class-validator';
 import { v4 as uuid } from 'uuid';
 
-@Entity()
-export class Expenditure {
+@Entity({
+  name: 'expenditure',
+})
+export class ExpenditureModel {
   @PrimaryGeneratedColumn('uuid')
   id: string = uuid();
 

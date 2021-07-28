@@ -17,13 +17,23 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { Course } from './course.entity';
-import { Payment } from './payments.entity';
+import { CourseModel } from './course.model';
+import { PaymentModel } from './payments.model';
 
-@Entity()
-export class Customer {
+@Entity({
+  name: 'customer',
+})
+export class CustomerModel {
   @PrimaryColumn('varchar')
   id: string;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  @IsString()
+  @IsNotEmpty()
+  status: string;
 
   @Column('varchar')
   @IsString()
@@ -271,14 +281,14 @@ export class Customer {
   @DeleteDateColumn()
   deletedAt?: Date;
 
-  @ManyToOne(() => Course, (course) => course.customers, {
+  @ManyToOne(() => CourseModel, (course) => course.customers, {
     eager: true,
     nullable: true,
   })
-  course: Course;
+  course: CourseModel;
 
-  @OneToMany(() => Payment, (payment) => payment.customer, {
+  @OneToMany(() => PaymentModel, (payment) => payment.customer, {
     onDelete: 'CASCADE',
   })
-  payments: Payment[];
+  payments: PaymentModel[];
 }

@@ -8,10 +8,18 @@ import {
   Res,
   HttpStatus,
   Delete,
+  Patch,
+  Query,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { Payment } from '../infra/entities/payments.entity';
+import { PaymentModel } from '../infra/model/payments.model';
 import { PaymentService } from '../services/payments.service';
+import {
+  ReceivePayment,
+  ReceiveInCash,
+  PaymentsType,
+  PaymentsStatus,
+} from '../types/payment';
 
 @Controller('/payment')
 export class PaymentController {
@@ -22,7 +30,7 @@ export class PaymentController {
     @Res()
     response: Response,
     @Body()
-    payment: Payment,
+    payment: PaymentModel,
   ) {
     try {
       const newPayment = await this.paymentService.createPayment(payment);
@@ -41,12 +49,38 @@ export class PaymentController {
     @Res()
     response: Response,
     @Body()
-    payment: any,
+    { event, payment }: ReceivePayment,
   ) {
     try {
-      return response.status(200).send({
-        message: 'SHWO',
+      const updatedPayment = await this.paymentService.receivePayment({
+        event,
+        payment,
       });
+
+      return response.status(HttpStatus.OK).send(updatedPayment);
+    } catch (error) {
+      return response.status(HttpStatus.BAD_REQUEST).send({
+        message: 'Atenção!',
+        title: error.message,
+      });
+    }
+  }
+
+  @Patch(':id')
+  async receivePaymentInCash(
+    @Res()
+    response: Response,
+    @Param('id')
+    id: string,
+    @Body()
+    payment: ReceiveInCash,
+  ) {
+    try {
+      const updatedPayment = await this.paymentService.receivePaymentInMoney(
+        payment,
+        id,
+      );
+      return response.status(HttpStatus.OK).send(updatedPayment);
     } catch (error) {
       return response.status(HttpStatus.BAD_REQUEST).send({
         message: 'Atenção!',
@@ -62,7 +96,7 @@ export class PaymentController {
     @Param('id')
     id: string,
     @Body()
-    payment: Payment,
+    payment: PaymentModel,
   ) {
     try {
       const updatedPayment = await this.paymentService.updatePayment(
@@ -72,6 +106,7 @@ export class PaymentController {
 
       return response.status(HttpStatus.OK).send(updatedPayment);
     } catch (error) {
+      console.log(error);
       return response.status(HttpStatus.BAD_REQUEST).send({
         message: 'Atenção!',
         title: error.message,
@@ -83,9 +118,19 @@ export class PaymentController {
   async listPayments(
     @Res()
     response: Response,
+    @Query('type')
+    type: PaymentsType,
+    @Query('status')
+    status: PaymentsStatus,
+    @Query('customer')
+    customer: string,
   ) {
     try {
-      const payments = await this.paymentService.listPayments();
+      const payments = await this.paymentService.listPayments({
+        type,
+        status,
+        customer,
+      });
 
       return response.status(HttpStatus.OK).json(payments);
     } catch (error) {
